@@ -1,9 +1,8 @@
-const O="https://trace-x.pages.dev";
 const R=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{"content-type":"application/json"}});
 const k=x=>String(x??"").trim().slice(0,30).toLowerCase();
 async function f(r,e){
  const u=new URL(r.url),p=u.pathname;
- if(!p.startsWith("/api/"))return fetch(O+u.pathname+u.search,r);
+ if(!p.startsWith("/api/"))return e.ASSETS.fetch(r);
  if(!e.DB)return R({error:"D1 unavailable"},503);
  try{
   if(p==="/api/register"&&r.method==="POST"){

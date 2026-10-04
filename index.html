@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRACE / X — Investigation Challenge</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔎</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f2350;--bg:#f2f9ff;--panel:#fff;--panel-2:#fff4c2;
+  --border:#c8d7ee;--border-strong:#1f2350;
+  --text:#1f2350;--muted:#565f8c;--muted-2:#7a82aa;
+  --green:#0b9a5b;--yellow:#a85a00;--red:#e5383b;
+  --sun:#ffd23f;--pink:#ff7aa8;--sky:#5cc8ff;--mint:#4ade9f;--grape:#7b5cff;--grape-d:#5a3fd6;
+  --display:'Fredoka','Noto Sans Tamil',sans-serif;--body:'Nunito','Noto Sans Tamil',sans-serif;
+}
+*{box-sizing:border-box}
+body{background-color:#cdeeff;background-image:radial-gradient(#fff 2px,transparent 2.6px);background-size:30px 30px;color:var(--ink);font-family:var(--body);font-weight:600;font-size:16px;margin:0;min-height:100vh;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--display)}.tamil{font-family:'Noto Sans Tamil',var(--body)}
+.topbar{position:sticky;top:0;z-index:30;min-height:64px;background:#fff;border-bottom:3px solid var(--ink);display:flex;justify-content:space-between;align-items:center;padding:8px 20px;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:20px;background:var(--sun);border:3px solid var(--ink);border-radius:999px;padding:4px 16px 4px 12px;box-shadow:0 3px 0 var(--ink)}
+.brand-dot{width:12px;height:12px;background:var(--pink);border:2px solid var(--ink);border-radius:50%}
+.nav-right{display:flex;align-items:center;gap:12px}
+.timer{font-family:var(--display);font-size:19px;font-weight:700;background:var(--mint);border:3px solid var(--ink);border-radius:999px;padding:4px 16px;min-width:104px;text-align:center;box-shadow:0 3px 0 var(--ink)}
+.timer::before{content:'⏱ '}
+.timer.low{background:var(--red);color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.badge-live{font-family:var(--display);font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;background:#fff;border:2.5px solid var(--ink);padding:4px 12px;border-radius:999px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mint);border:2px solid var(--ink)}
+.container{max-width:1100px;margin:0 auto;padding:26px 20px 120px}
+.grid-main{display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
+@media(max-width:900px){.grid-main{grid-template-columns:1fr}}
+.card{background:#fff;border:3px solid var(--ink);border-radius:24px;padding:22px;box-shadow:0 6px 0 var(--ink)}
+.card-header{font-family:var(--display);font-size:16px;font-weight:600;color:var(--grape-d);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.field{margin:16px 0 0}.field label{font-family:var(--display);font-size:15px;font-weight:600;display:block;margin-bottom:6px}
+.input{width:100%;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px 14px;color:var(--ink);font-family:var(--body);font-weight:700;font-size:17px;outline:none;transition:.15s}
+.input::placeholder{color:var(--muted-2);font-weight:600}
+.input:focus{border-color:var(--grape);box-shadow:0 0 0 4px rgba(123,92,255,.3)}
+select{font-family:var(--body)!important;font-weight:700;font-size:14px!important;border:2.5px solid var(--ink)!important;border-radius:12px!important;background:#fff!important;cursor:pointer}
+.btn{border-radius:16px;padding:12px 22px;font-size:17px;font-weight:600;font-family:var(--display);cursor:pointer;transition:transform .1s,box-shadow .1s;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:3px solid var(--ink);color:var(--ink);box-shadow:0 5px 0 var(--ink)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.btn:focus-visible,.opt:focus-visible,.ev-card:focus-visible,.tab:focus-visible,.input:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
+.btn-primary{background:var(--grape);color:#fff}.btn-primary:hover{background:var(--grape-d)}
+.btn-ghost{background:#fff}.btn-ghost:hover{background:var(--panel-2)}
+.btn-small{padding:8px 16px;font-size:15px;border-radius:14px;box-shadow:0 4px 0 var(--ink)}
+.progress{display:flex;gap:6px;margin:14px 0}
+.pdot{flex:1;height:12px;background:#fff;border:2.5px solid var(--ink);border-radius:999px;transition:.3s}
+.pdot.active{background:var(--sun)}.pdot.done{background:var(--mint)}
+.scenario-box{background:#fff3b0;border:3px solid var(--ink);border-radius:18px;padding:16px 18px;margin:12px 0;font-size:17px;line-height:1.7}
+.scenario-box .label{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:8px}
+.scenario-box .label::before{content:'📖 '}
+.scenario-box .tamil{border-top:2px dashed rgba(31,35,80,.35)!important}
+.q-title{font-family:var(--display);font-size:21px;font-weight:600;line-height:1.4}
+.q-title .ta{display:block;margin-top:6px;font-family:'Noto Sans Tamil',var(--body);font-size:15px;color:var(--grape-d);font-weight:500;line-height:1.55}
+.opt{position:relative;display:flex;gap:14px;align-items:center;border:3px solid var(--ink);border-radius:18px;padding:12px 16px;margin:12px 0;cursor:pointer;background:#fff;transition:transform .12s,background .12s,box-shadow .12s;box-shadow:0 4px 0 var(--ink)}
+.opt:hover{background:var(--panel-2);transform:translateY(-2px);box-shadow:0 6px 0 var(--ink)}
+.opt.sel{background:#c9f7df;animation:pop .28s ease-out}
+.opt.sel::after{content:'✓';margin-left:auto;font-family:var(--display);font-weight:700;font-size:26px;color:var(--green)}
+@keyframes pop{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:scale(1)}}
+.opt .key{width:38px;height:38px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:18px;font-weight:700;flex-shrink:0;background:var(--pink)}
+.opt:nth-child(4n+2) .key{background:var(--sky)}.opt:nth-child(4n+3) .key{background:var(--sun)}.opt:nth-child(4n+4) .key{background:var(--mint)}
+.opt.sel .key{background:var(--ink);color:#fff}
+.opt .text{flex:1;font-size:16px;line-height:1.5}.opt .text .ta{color:var(--muted);font-size:14px;margin-top:3px;display:block;font-weight:500}
+.footer-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:3px solid var(--ink);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:20}
+.overlay{position:fixed;inset:0;background:rgba(31,35,80,.65);backdrop-filter:blur(6px);z-index:50;display:none;padding:22px;overflow:auto}.overlay.open{display:block}
+.table{width:100%;border-collapse:collapse;font-family:var(--body);font-size:15px;font-weight:700}
+.table th{text-align:left;padding:10px 12px;font-family:var(--display);font-size:14px;background:var(--sun);border-bottom:3px solid var(--ink);font-weight:600;white-space:nowrap}
+.table td{padding:11px 12px;border-bottom:2px solid var(--border);vertical-align:top}
+.table tbody tr:first-child td{background:#fff3b0}
+.ev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+@media(max-width:700px){.ev-grid{grid-template-columns:1fr}}
+.ev-card{border:3px dashed var(--ink);border-radius:18px;padding:14px;background:#e9e2ff;transition:transform .12s;cursor:pointer}
+.ev-card:not(.opened):hover{transform:rotate(-1deg) translateY(-2px)}
+.ev-card.opened{border-style:solid;background:#fff3b0;cursor:default}
+.ev-card .ev-head{font-family:var(--display);font-size:15px;font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ev-card .ev-head::before{content:'🔍'}
+.ev-card .ev-head>span:first-child{flex:1}
+.ev-card .ev-body{margin-top:8px;font-size:14px;line-height:1.5}
+.penalty{font-family:var(--display);font-size:13px;padding:2px 10px;border-radius:999px;border:2px solid var(--ink);background:#fff;white-space:nowrap}
+.penalty.used{background:var(--red);color:#fff}
+.hero-kbd{font-family:var(--display);font-size:14px;font-weight:600;border:2.5px solid var(--ink);padding:4px 12px;border-radius:999px;background:#e9e2ff}
+.hero-title{display:inline-block;font-family:var(--display);font-weight:700;font-size:clamp(38px,8vw,64px);line-height:1.05;margin:0;background:var(--sun);border:4px solid var(--ink);border-radius:24px;padding:8px 24px 10px 18px;box-shadow:0 8px 0 var(--ink);transform:rotate(-1.5deg)}
+.wiggle{display:inline-block;transform-origin:70% 70%;animation:wiggle 1s .4s 2}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg) scale(1.1)}75%{transform:rotate(14deg) scale(1.1)}}
+.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:999px;border:3px solid var(--ink);background:#fff;font-family:var(--display);font-size:15px;font-weight:600;cursor:pointer;color:var(--ink);box-shadow:0 3px 0 var(--ink)}
+.tab.active{background:var(--grape);color:#fff}
+.review-bar{display:flex;gap:8px;overflow:auto;padding:8px 4px 10px}
+.review-chip{padding:4px 12px;border-radius:999px;border:2.5px solid var(--ink);background:#fff;font-family:var(--display);font-size:14px;font-weight:600;white-space:nowrap}
+.review-chip.done{background:var(--mint)}.review-chip.current{background:var(--ink);color:#fff}
+.hidden-clue{margin-top:12px;border:2.5px dashed var(--ink);border-radius:12px;background:#fff;overflow:hidden}
+.hidden-clue summary{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:0.02em;cursor:pointer;padding:10px 12px;list-style:none;background:var(--mint);border-bottom:0}
+.hidden-clue summary::-webkit-details-marker{display:none}
+.hidden-clue[open] summary{border-bottom:2.5px solid var(--ink)}
+.hidden-clue .clue-inner{padding:12px;font-size:13.5px;line-height:1.6;background:#fff}
+.blur-text{filter:blur(5px);user-select:none;transition:.2s;cursor:pointer;background:#e9e2ff;padding:4px 8px;border-radius:8px;border:2px solid var(--ink);display:inline-block;margin-top:6px;font-weight:700}
+.blur-text.revealed{filter:none;user-select:text;background:#c9f7df;color:var(--green);border-color:var(--green)}
+@media(max-width:600px){
+  .badge-live{display:none}.brand{font-size:17px}.card{padding:16px}
+  .scenario-box{font-size:16px}
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  [style*="grid-template-columns:1fr 1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><span class="brand-dot"></span> TRACE / X</div>
+  <div class="nav-right">
+    <div class="badge-live"><span class="dot"></span> <span id="roundLabel">Ready to play</span></div>
+    <div class="timer" id="timer">15:00</div>
+    <button class="btn btn-ghost btn-small" onclick="openAdmin()">🛡️ Admin</button>
+    <button class="btn btn-ghost btn-small" onclick="toggleBoard()">🏆 Leaderboard</button>
+  </div>
+</div>
+
+<div class="container" id="app"></div>
+
+<div class="footer-nav" id="footerNav" style="display:none">
+  <button class="btn btn-ghost btn-small" id="prevBtn" onclick="prevCase()">← Back</button>
+  <div class="mono" style="font-size:14px;color:var(--muted);text-align:center"><span id="curIdx">1</span> / <span id="totIdx">10</span> • <span id="answeredCount">0</span> answered <span id="penaltyWrap" style="display:none">• Penalty: <span id="penaltyView">0</span></span></div>
+  <button class="btn btn-primary btn-small" id="nextBtn" onclick="nextCase()">Next →</button>
+</div>
+
+<div class="overlay" id="adminPanel">
+  <div style="max-width:980px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div><div style="font-family:var(--display);font-size:14px;color:#fff">Admin</div><div style="font-size:28px;font-weight:600;margin-top:4px;color:#fff">🛡️ Select teams for Round 2</div></div>
+      <button class="btn btn-ghost btn-small" onclick="closeAdmin()">Close ✕</button>
+    </div>
+    <div class="card" id="adminBody">Loading…</div>
+  </div>
+</div>
+
+<div class="overlay" id="board">
+  <div style="max-width:980px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div><div style="font-family:var(--display);font-size:14px;color:#fff">Live ranking</div><div style="font-size:28px;font-weight:600;letter-spacing:-0.02em;margin-top:4px;color:#fff">🏆 Leaderboard <span id="refreshDot" style="display:inline-block;width:8px;height:8px;background:var(--mint);border-radius:50%;margin-left:8px;opacity:0;transition:.3s"></span></div></div>
+      <button class="btn btn-ghost btn-small" onclick="toggleBoard()">Close ✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="card" style="padding:14px"><div class="card-header">Total Teams</div><div style="font-family:var(--display);font-size:24px;font-weight:600" id="statTeams">0</div></div>
+      <div class="card" style="padding:14px"><div class="card-header">Average Score</div><div style="font-family:var(--display);font-size:24px;font-weight:600" id="statAvg">0</div></div>
+      <div class="card" style="padding:14px"><div class="card-header">Time Remaining</div><div style="font-family:var(--display);font-size:24px;font-weight:600" id="statTime">15:00</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div class="mono" style="font-size:13px;color:var(--muted)">Ranking Table — Sorted by Score</div>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-small" onclick="exportCSV()">Export CSV</button><button class="btn btn-ghost btn-small" onclick="clearBoard()">Clear (Teacher)</button></div>
+      </div>
+      <div style="overflow:auto"><table class="table" id="boardTable"><thead><tr><th>Rank</th><th>Team Name</th><th>Round 1 (50)</th><th>Round 2 (50)</th><th>Penalty</th><th>Total (100)</th><th>Time Taken</th></tr></thead><tbody></tbody></table></div>
+      <div style="margin-top:12px;font-size:13px;color:var(--muted-2);font-family:var(--display)">Auto-refreshes every 5 seconds • Data stored locally + server</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function cleanupOldKeys(){
+  try{
+    ['tracex_state','tracex_state_v2','tracex_state_v3','tracex_state_v4','tracex_state_v5'].forEach(k=>{ if(localStorage.getItem(k)) localStorage.removeItem(k); });
+  }catch{}
+})();
+
+// CLOUD SYNC FOR NETLIFY - Fixes leaderboard not showing across laptops
+// Uses free kvdb.io as shared storage when /api/scoreboard is not available (Netlify)
+// Bucket created via: curl -d 'email=test@example.com' https://kvdb.io -> PZk4dq4Zq6NQwRG2BP2nhf
+// Tested: DELETE then POST works reliably, supports complex team objects
+const CLOUD_BUCKET = "PZk4dq4Zq6NQwRG2BP2nhf";
+const CLOUD_BASE = "https://kvdb.io/" + CLOUD_BUCKET;
+let isCloudMode = false;
+console.log("Cloud bucket:", CLOUD_BUCKET);
+
+async function cloudGetTeams(){
+  try{
+    const res = await fetch(CLOUD_BASE + "/teams");
+    if(res.ok){
+      const txt = await res.text();
+      if(txt && txt.trim()){
+        const data = JSON.parse(txt);
+        if(Array.isArray(data)) return data;
+      }
+    }
+  }catch(e){ console.log("cloud get fail", e); }
+  return [];
+}
+async function cloudSaveTeams(teams){
+  try{
+    // kvdb needs DELETE then POST for reliable update
+    await fetch(CLOUD_BASE + "/teams", {method: "DELETE"}).catch(()=>{});
+    await new Promise(r=>setTimeout(r, 300));
+    await fetch(CLOUD_BASE + "/teams", {
+      method: "POST",
+      body: JSON.stringify(teams),
+      headers: {"Content-Type": "application/json"}
+    });
+    isCloudMode = true;
+    console.log("Cloud saved:", teams.length, "teams");
+  }catch(e){ console.log("cloud save fail", e); }
+}
+async function saveToCloud(entry){
+  try{
+    let cloudTeams = await cloudGetTeams();
+    if(!Array.isArray(cloudTeams)) cloudTeams = [];
+    cloudTeams = cloudTeams.filter(t => t.team.toLowerCase() !== entry.team.toLowerCase());
+    cloudTeams.push(entry);
+    await cloudSaveTeams(cloudTeams);
+  }catch(e){}
+}
+async function clearCloud(){
+  try{
+    await fetch(CLOUD_BASE + "/teams", {method: "DELETE"});
+    await new Promise(r=>setTimeout(r, 300));
+    await fetch(CLOUD_BASE + "/teams", {
+      method: "POST",
+      body: "[]",
+      headers: {"Content-Type": "application/json"}
+    });
+  }catch(e){}
+}
+
+// EASY WORDS FOR GOVT SCHOOL KIDS - NO HARD WORDS
+const R1_TIME=15*60, R2_TIME=15*60;
+const CASES_R1 = [
+{ id:1, title_en:"Free Coins Message", title_ta:"இலவச காயின் செய்தி",
+  scenario_en:"Arjun is playing a game. He gets a message: 'You won 10,000 FREE coins! Click here: www.free-gamecoins123.com and give your username and password'.",
+  scenario_ta:"அர்ஜுன் விளையாட்டு விளையாடுகிறான். அவனுக்கு செய்தி வருகிறது: '10,000 இலவச காயின் வென்றுள்ளீர்கள்! இங்கே கிளிக் செய்து பெயர், கடவுச்சொல் கொடுங்கள்'.",
+  q_en:"Is this message real or fake?", q_ta:"இந்த செய்தி உண்மையா? போலியா?",
+  opts:[{en:"Real prize from game company", ta:"விளையாட்டு நிறுவனத்தின் உண்மையான பரிசு"},{en:"Fake message to steal his account", ta:"கணக்கை திருட போலி செய்தி"},{en:"Message from school", ta:"பள்ளியில் இருந்து செய்தி"},{en:"Phone company message", ta:"போன் நிறுவன செய்தி"}], correct:1},
+{ id:2, title_en:"Same Photo, New Account", title_ta:"ஒரே புகைப்படம், புது கணக்கு",
+  scenario_en:"Priya already has a friend named Kavya. Now she gets a new friend request from 'Kavya' with same photo. But this new account was made only 2 days ago. It says 'Send homework quickly!'.",
+  scenario_ta:"பிரியாவுக்கு ஏற்கனவே காவ்யா என்ற நண்பர் இருக்கிறார். இப்போது அதே புகைப்படத்துடன் 'காவ்யா' என்ற பெயரில் புது கணக்கில் இருந்து நட்பு கோரிக்கை வருகிறது. அந்த கணக்கு 2 நாள் முன்பு தான் உருவாக்கப்பட்டது. 'வீட்டுப்பாடம் வேகமா அனுப்பு!' என்கிறது.",
+  q_en:"What should Priya do? Simple answer.", q_ta:"பிரியா என்ன செய்ய வேண்டும்?",
+  opts:[{en:"Send homework fast", ta:"வீட்டுப்பாடத்தை வேகமாக அனுப்ப வேண்டும்"},{en:"Ask the real Kavya face to face or call her old number", ta:"உண்மையான காவ்யாவிடம் நேரில் கேட்க வேண்டும்"},{en:"Give her password", ta:"கடவுச்சொல்லை கொடுக்க வேண்டும்"},{en:"Do nothing", ta:"எதுவும் செய்யக்கூடாது"}], correct:1},
+{ id:3, title_en:"Bank OTP Call", title_ta:"வங்கி OTP அழைப்பு",
+  scenario_en:"Rahul gets a call. A man says 'I am from your bank. Your account is blocked. Tell me the OTP number that came to your phone'. Rahul gets an OTP SMS at same time.",
+  scenario_ta:"ராகுலுக்கு போன் வருகிறது. 'நான் வங்கியில் இருந்து பேசுகிறேன். உங்கள் கணக்கு முடக்கப்பட்டது. உங்கள் போனில் வந்த OTP எண்ணை சொல்லுங்கள்' என்கிறார். அதே நேரத்தில் OTP SMS வருகிறது.",
+  q_en:"Should Rahul tell the OTP number?", q_ta:"ராகுல் OTP எண்ணை சொல்லலாமா?",
+  opts:[{en:"Yes, to open account fast", ta:"ஆம், கணக்கை வேகமாக திறக்க"},{en:"No, never tell OTP to anyone. Real bank will never ask", ta:"கூடாது, OTP-யை யாருக்கும் சொல்லக்கூடாது. உண்மையான வங்கி கேட்காது"},{en:"Tell only half OTP", ta:"OTP-யில் பாதி மட்டும் சொல்லலாம்"},{en:"Tell after 10 minutes", ta:"10 நிமிடம் கழித்து சொல்லலாம்"}], correct:1},
+{ id:4, title_en:"Which Password is Strong?", title_ta:"எந்த கடவுச்சொல் வலிமையானது?",
+  scenario_en:"4 students made passwords: A) 123456 B) password C) MyDOB2009 (my birth date 2009) D) T!gEr$9kL#2p (mix of letters, numbers, symbols).",
+  scenario_ta:"4 மாணவர்கள் கடவுச்சொல் வைத்தனர்: A) 123456 B) password C) MyDOB2009 (பிறந்த தேதி) D) T!gEr$9kL#2p (எழுத்து, எண், குறியீடு கலந்தது).",
+  q_en:"Which password is very hard to guess?", q_ta:"எந்த கடவுச்சொல்லை கண்டுபிடிப்பது கடினம்?",
+  opts:[{en:"123456 - easy to remember", ta:"123456 - நினைவில் வைக்க எளிது"},{en:"password", ta:"password"},{en:"MyDOB2009 - my birth date", ta:"MyDOB2009 - பிறந்த தேதி"},{en:"T!gEr$9kL#2p - mix of letters, numbers, symbols", ta:"T!gEr$9kL#2p - எழுத்து, எண், குறியீடு கலந்தது"}], correct:3},
+{ id:5, title_en:"Free Wi-Fi at Mall", title_ta:"மாலில் இலவச Wi-Fi",
+  scenario_en:"At a mall you see two Wi-Fi names: 'Mall_Official_Secure' needs bill code, and 'FREE_MALL_WIFI_OPEN' needs no password. Free Wi-Fi shows page: 'Give your school email and password to get free coupon'.",
+  scenario_ta:"மாலில் இரண்டு Wi-Fi பெயர்கள் உள்ளன: 'Mall_Official_Secure' பில் குறியீடு கேட்கிறது, 'FREE_MALL_WIFI_OPEN' கடவுச்சொல் கேட்கவில்லை. இலவச Wi-Fi பக்கம் 'இலவச கூப்பன் பெற பள்ளி மின்னஞ்சல், கடவுச்சொல் கொடுங்கள்' என்கிறது.",
+  q_en:"What is safe to do?", q_ta:"எது பாதுகாப்பானது?",
+  opts:[{en:"Give school password to get coupon", ta:"கூப்பன் பெற பள்ளி கடவுச்சொல் கொடுப்பது"},{en:"Use only official Wi-Fi and never type real password on unknown page", ta:"அதிகாரப்பூர்வ Wi-Fi மட்டும் பயன்படுத்தி, தெரியாத பக்கத்தில் உண்மையான கடவுச்சொல் போடாமல் இருப்பது"},{en:"Always use strongest signal Wi-Fi", ta:"எப்போதும் வலுவான சிக்னல் Wi-Fi பயன்படுத்துவது"},{en:"Share Wi-Fi password to all friends", ta:"Wi-Fi கடவுச்சொல்லை நண்பர்களுக்கு கொடுப்பது"}], correct:1},
+{ id:6, title_en:"Stranger Asks Your House Address", title_ta:"தெரியாத நபர் வீட்டு முகவரி கேட்பது",
+  scenario_en:"You are playing online game. A player you never met says: 'You are very nice! Where is your house? Send me your home address and phone number, I will send you gift'.",
+  scenario_ta:"நீ ஆன்லைன் விளையாட்டு விளையாடுகிறாய். நீ பார்த்திராத ஒருவர் 'நீ மிகவும் நல்லவன்! உன் வீடு எங்கே? வீட்டு முகவரி, போன் நம்பர் அனுப்பு, பரிசு அனுப்புகிறேன்' என்கிறார்.",
+  q_en:"What should you do?", q_ta:"நீ என்ன செய்ய வேண்டும்?",
+  opts:[{en:"Send address fast", ta:"வேகமாக முகவரி அனுப்ப வேண்டும்"},{en:"Say no, block that person, tell your parents or teacher", ta:"முடியாது என்று சொல்லி, தடுத்து, பெற்றோர் அல்லது ஆசிரியரிடம் சொல்ல வேண்டும்"},{en:"Send wrong address", ta:"தவறான முகவரி அனுப்ப வேண்டும்"},{en:"Ask him to guess address", ta:"முகவரியை யூகிக்க சொல்ல வேண்டும்"}], correct:1},
+{ id:7, title_en:"Free Game Download Says Switch Off Antivirus", title_ta:"இலவச விளையாட்டு - ஆன்டிவைரஸை அணைக்க சொல்வது",
+  scenario_en:"You search 'Free GTA 5 download'. One website says: 'Click here for free cracked game! Before installing, switch off your antivirus'.",
+  scenario_ta:"'Free GTA 5 download' என்று தேடுகிறாய். ஒரு வலைத்தளம் 'இலவச கிராக் விளையாட்டு இங்கே கிளிக் செய்யவும்! நிறுவும் முன் ஆன்டிவைரஸை அணைக்கவும்' என்கிறது.",
+  q_en:"What can happen if you do that?", q_ta:"அப்படி செய்தால் என்ன ஆகும்?",
+  opts:[{en:"No problem, free is always safe", ta:"பிரச்சனை இல்லை, இலவசம் எப்போதும் பாதுகாப்பு"},{en:"Bad software can come inside and lock your files", ta:"கெட்ட மென்பொருள் உள்ளே வந்து கோப்புகளை பூட்டிவிடும்"},{en:"Your computer will become fast", ta:"கணினி வேகமாகும்"},{en:"It is official website", ta:"அது அதிகாரப்பூர்வ வலைத்தளம்"}], correct:1},
+{ id:8, title_en:"Mean Messages in Class Group", title_ta:"வகுப்பு குழுவில் கேலி செய்திகள்",
+  scenario_en:"Someone in your class group is sending bad messages about you and sharing your photo after editing it badly. You feel very sad.",
+  scenario_ta:"உன் வகுப்பு குழுவில் யாரோ உன்னை பற்றி கெட்ட செய்திகள் அனுப்பி, உன் புகைப்படத்தை தவறாக திருத்தி பகிர்கிறார். உனக்கு மிகவும் வருத்தமாக உள்ளது.",
+  q_en:"What is good first step?", q_ta:"முதலில் என்ன செய்வது நல்லது?",
+  opts:[{en:"Send bad words back", ta:"நீயும் கெட்ட வார்த்தை அனுப்புவது"},{en:"Take screenshot as proof, block that person, tell teacher or parents", ta:"ஸ்கிரீன்ஷாட் எடுத்து ஆதாரமாக வைத்து, தடுத்து, ஆசிரியர் அல்லது பெற்றோரிடம் சொல்வது"},{en:"Delete your account and stay silent forever", ta:"கணக்கை நீக்கி எப்போதும் அமைதியாக இருப்பது"},{en:"Share it to more groups", ta:"அதை மேலும் குழுக்களில் பகிர்வது"}], correct:1},
+{ id:9, title_en:"Which Link is Safe to Pay Fees?", title_ta:"கட்டணம் செலுத்த எந்த இணைப்பு பாதுகாப்பானது?",
+  scenario_en:"You want to pay school fees online. You see 3 links.",
+  scenario_ta:"நீ பள்ளி கட்டணம் ஆன்லைனில் செலுத்த விரும்புகிறாய். 3 இணைப்புகள் உள்ளன.",
+  q_en:"Which one is safe?", q_ta:"எது பாதுகாப்பானது?",
+  opts:[{en:"http://school-fee-pay-now.tk with no lock symbol", ta:"http://school-fee-pay-now.tk பூட்டு சின்னம் இல்லை"},{en:"https://www.yourschool.edu.in/fees with lock symbol and correct spelling", ta:"https://www.yourschool.edu.in/fees பூட்டு சின்னம் மற்றும் சரியான எழுத்துடன்"},{en:"Link from unknown SMS says pay in 10 minutes", ta:"தெரியாத SMS-ல் 10 நிமிடத்தில் கட்டவும் என்ற இணைப்பு"},{en:"First ad you see on Google", ta:"கூகுளில் முதலில் வரும் விளம்பரம்"}], correct:1},
+{ id:10, title_en:"Your Instagram Posts Bad Things Alone", title_ta:"Instagram தானாக கெட்ட பதிவுகள் போடுவது",
+  scenario_en:"Your Instagram account is posting bad messages you did not type. You cannot login.",
+  scenario_ta:"உன் Instagram கணக்கு நீ போடாத கெட்ட செய்திகளை போடுகிறது. உன்னால் உள்நுழைய முடியவில்லை.",
+  q_en:"What to do first?", q_ta:"முதலில் என்ன செய்ய வேண்டும்?",
+  opts:[{en:"Make new account and forget old one", ta:"புது கணக்கு தொடங்கி பழையதை மறப்பது"},{en:"Click Forgot Password, make 2-step safety ON, tell parents, tell Instagram company", ta:"Forgot Password கிளிக் செய்து, 2-படி பாதுகாப்பை ON செய்து, பெற்றோரிடம் சொல்லி, Instagram நிறுவனத்திடம் சொல்வது"},{en:"Pay money if hacker asks", ta:"ஹேக்கர் பணம் கேட்டால் கொடுப்பது"},{en:"Give password to friends to check", ta:"கடவுச்சொல்லை நண்பர்களிடம் கொடுத்து பார்க்க சொல்வது"}], correct:1}
+];
+
+// Spread the right answers over A-D (Q4 stays D because its story labels the passwords A-D)
+const R1_CORRECT_POS=[0,2,1,3,0,3,1,2,3,0];
+CASES_R1.forEach((c,i)=>{ const right=c.opts.splice(c.correct,1)[0]; c.opts.splice(R1_CORRECT_POS[i],0,right); c.correct=R1_CORRECT_POS[i]; });
+
+const ROUND2_CASES = [
+{
+  id:"R2-C1",
+  title_en:"Case 1: Free Scholarship Message - Rs 50,000 Trick",
+  title_ta:"வழக்கு 1: இலவச ஸ்காலர்ஷிப் - ரூ 50,000 ஏமாற்று",
+  story_en:"Meena is in 12th class. She gets SMS: 'You won Rs 50,000 Government Scholarship! Get it in 10 minutes: bit.ly/scholar2024'. She clicks the link. She types her Aadhaar number, bank details and OTP. Then Rs 5,000 goes away from her bank.",
+  story_ta:"மீனா 12-ம் வகுப்பு. அவளுக்கு SMS வருகிறது: 'ரூ 50,000 அரசு ஸ்காலர்ஷிப் வென்றுள்ளீர்கள்! 10 நிமிடத்தில் பெறுங்கள்: bit.ly/scholar2024'. அவள் இணைப்பை கிளிக் செய்கிறாள். ஆதார் எண், வங்கி விவரம், OTP போடுகிறாள். பின்பு ரூ 5,000 வங்கியில் இருந்து போய்விடுகிறது.",
+  evidence:[
+    { id:1, title_en:"Evidence 1 - The SMS", title_ta:"ஆதாரம் 1 - SMS", penalty:2,
+      content_en:"From: Unknown number +91 9XXXX XXXXX\nMessage: 'You won Rs 50,000 Scholarship! Get in 10 minutes or you lose! bit.ly/scholar2024'\nThis number is not government number. Real government never says '10 minutes or you lose'.",
+      content_ta:"அனுப்புநர்: தெரியாத எண்\n'ரூ 50,000 ஸ்காலர்ஷிப் வென்றுள்ளீர்கள்! 10 நிமிடத்தில் பெறாவிட்டால் இழப்பீர்கள்! bit.ly/scholar2024'\nஇது அரசு எண் இல்லை. உண்மையான அரசு '10 நிமிடத்தில் இழப்பீர்கள்' என்று சொல்லாது.",
+      hidden_en:"Hidden clue: The SMS is FAKE. Real scholarship site is scholarship.gov.in. Answer for Q1 is FAKE / SCAM / CHEATING / TRICK.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: இந்த SMS போலி. உண்மையான தளம் scholarship.gov.in. Q1 பதில்: போலி / ஏமாற்று.",
+      hint_en:"See how they make you hurry", hint_ta:"உன்னை எப்படி அவசரப்படுத்துகிறார்கள் என்று பார்"
+    },
+    { id:2, title_en:"Evidence 2 - The Website", title_ta:"ஆதாரம் 2 - வலைத்தளம்", penalty:3,
+      content_en:"Link: http://scholarship-free-claim.tk\nNo lock symbol, spelling mistake, asks Aadhaar + OTP + Bank PIN\nReal website: https://scholarship.gov.in has lock symbol and .gov.in",
+      content_ta:"இணைப்பு: http://scholarship-free-claim.tk\nபூட்டு சின்னம் இல்லை, எழுத்து தவறு, ஆதார் + OTP + வங்கி PIN கேட்கிறது\nஉண்மையான தளம்: https://scholarship.gov.in பூட்டு சின்னம் உள்ளது",
+      hidden_en:"Hidden clue: Check lock symbol and spelling. Fake site uses .tk not .gov.in. So never type OTP there.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: பூட்டு சின்னம் மற்றும் எழுத்தை பார். போலி தளம் .tk பயன்படுத்துகிறது.",
+      hint_en:"Look for lock symbol before lock", hint_ta:"பூட்டு சின்னம் உள்ளதா என பார்"
+    },
+    { id:3, title_en:"Evidence 3 - Bank Message", title_ta:"ஆதாரம் 3 - வங்கி செய்தி", penalty:5,
+      content_en:"Bank SMS: 'Rs 5,000 taken from your account. If not you, call 1930 now.'\nMeena typed OTP on fake site. Bad person used OTP to take money.",
+      content_ta:"வங்கி SMS: 'ரூ 5,000 உங்கள் கணக்கில் இருந்து எடுக்கப்பட்டது. நீங்கள் இல்லை என்றால் இப்போது 1930-ஐ அழைக்கவும்.'\nமீனா போலி தளத்தில் OTP போட்டாள். கெட்ட நபர் OTP-யை பயன்படுத்தி பணம் எடுத்தான்.",
+      hidden_en:"Hidden clue: OTP is like house key. Never give to others. If money gone, call 1930 fast.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: OTP என்பது வீட்டு சாவி போல. யாருக்கும் கொடுக்காதே. பணம் போனால் 1930-ஐ வேகமாக அழை.",
+      hint_en:"OTP is secret like house key", hint_ta:"OTP வீட்டு சாவி போல ரகசியம்"
+    }
+  ],
+  q1:{ en:"Q1 (5 pts) In ONE word, what is this SMS? (easy word)", ta:"Q1 (5 மதிப்பெண்) ஒரு வார்த்தையில் இந்த SMS என்ன? (எளிய வார்த்தை)", hint_en:"Answer can be: fake, scam, fraud, cheating, trick, lie", hint_ta:"பதில்: fake, போலி, ஏமாற்று, மோசடி, தந்திரம், பொய்", answer:["fake","scam","fraud","cheating","trick","lie","phishing","cheat","fraudulent","bogus","false","போலி","ஏமாற்று","மோசடி","பொய்","fake message","fake sms"], points:5 },
+  q2:{ en:"Q2 (5 pts) What was Meena's first mistake?", ta:"Q2 (5 மதிப்பெண்) மீனாவின் முதல் தவறு என்ன?", opts:[{en:"She clicked unknown link that said 'hurry in 10 minutes'", ta:"'10 நிமிடத்தில் வேகம்' என்ற தெரியாத இணைப்பை கிளிக் செய்தது"},{en:"She asked her teacher", ta:"ஆசிரியரிடம் கேட்டது"},{en:"She deleted the SMS", ta:"SMS-ஐ நீக்கியது"},{en:"She checked real website scholarship.gov.in", ta:"உண்மையான scholarship.gov.in தளத்தில் பார்த்தது"}], correct:0, points:5 },
+  q3:{ en:"Q3 (5 pts) Money gone. What to do NOW?", ta:"Q3 (5 மதிப்பெண்) பணம் போய்விட்டது. இப்போது என்ன செய்ய வேண்டும்?", opts:[{en:"Give OTP again to get money back", ta:"பணம் திரும்ப பெற OTP-யை மீண்டும் கொடுப்பது"},{en:"Call 1930, tell parents and teachers, block bank card", ta:"1930-ஐ அழைத்து, பெற்றோர், ஆசிரியரிடம் சொல்லி, வங்கி கார்டை முடக்குவது"},{en:"Pay more money", ta:"மேலும் பணம் கட்டுவது"},{en:"Stay silent", ta:"அமைதியாக இருப்பது"}], correct:1, points:5 },
+  q4:{ en:"Q4 (10 pts) Put safe steps in correct order:", ta:"Q4 (10 மதிப்பெண்) பாதுகாப்பான படிகளை சரியான வரிசையில் வைக்கவும்:", sequences:[{label_en:"A) Open SMS → Click link → Type Aadhaar + OTP → Wait for money", label_ta:"A) SMS திற → இணைப்பை கிளிக் செய் → ஆதார் + OTP போடு → பணத்திற்காக காத்திரு", correct:false},{label_en:"B) Open SMS → Check real site scholarship.gov.in → Don't type OTP on unknown link → Tell 1930 if fake", label_ta:"B) SMS திற → உண்மையான scholarship.gov.in தளத்தில் பார் → தெரியாத இணைப்பில் OTP போடாதே → போலி என்றால் 1930-ல் சொல்", correct:true},{label_en:"C) Send SMS to all friends → Click link → Give bank PIN", label_ta:"C) SMS-ஐ எல்லா நண்பர்களுக்கும் அனுப்பு → இணைப்பை கிளிக் செய் → வங்கி PIN கொடு", correct:false},{label_en:"D) Delete SMS → Do nothing", label_ta:"D) SMS-ஐ நீக்கு → எதுவும் செய்யாதே", correct:false}], points:10 }
+},
+{
+  id:"R2-C2",
+  title_en:"Case 2: Parcel Delivery - Rs 25 Trick, Rs 2,000 Gone",
+  title_ta:"வழக்கு 2: பார்சல் டெலிவரி - ரூ 25 தந்திரம், ரூ 2,000 போனது",
+  story_en:"Arjun ordered a book online. He gets SMS: 'Your DTDC parcel is waiting. Address wrong. Pay Rs 25 to get again: bit.ly/dtdc-pay-25'. He clicks link. Website asks card number, CVV number (back side of card) and OTP. Then Rs 2,000 goes from his account.",
+  story_ta:"அர்ஜுன் ஆன்லைனில் புத்தகம் வாங்கினான். SMS வருகிறது: 'உங்கள் DTDC பார்சல் காத்திருக்கிறது. முகவரி தவறு. மீண்டும் பெற ரூ 25 கட்டவும்: bit.ly/dtdc-pay-25'. அவன் இணைப்பை கிளிக் செய்கிறான். வலைத்தளம் கார்டு எண், CVV எண் (கார்டின் பின்புற எண்) மற்றும் OTP கேட்கிறது. பின்பு ரூ 2,000 அவன் கணக்கில் இருந்து போய்விடுகிறது.",
+  evidence:[
+    { id:1, title_en:"Evidence 1 - The SMS", title_ta:"ஆதாரம் 1 - SMS", penalty:2,
+      content_en:"From: Unknown number +91 8XXXX XXXXX\n'Message: Your parcel waiting. Pay Rs 25 now or it will go back: bit.ly/dtdc-pay-25 - DTDC'\nReal DTDC never sends bit.ly link. Real number is official.",
+      content_ta:"அனுப்புநர்: தெரியாத எண்\n'உங்கள் பார்சல் காத்திருக்கிறது. இப்போது ரூ 25 கட்டவும் இல்லை என்றால் திரும்ப போய்விடும்: bit.ly/dtdc-pay-25'\nஉண்மையான DTDC bit.ly இணைப்பு அனுப்பாது.",
+      hidden_en:"Hidden clue: Short link bit.ly is easy to make fake. Real DTDC site is dtdc.in. Answer for Q1 is FAKE / SCAM / TRICK.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: bit.ly போன்ற சிறு இணைப்பு போலியாக எளிதில் உருவாக்கலாம். உண்மையான தளம் dtdc.in. பதில்: போலி.",
+      hint_en:"Real company will not use bit.ly", hint_ta:"உண்மையான நிறுவனம் bit.ly பயன்படுத்தாது"
+    },
+    { id:2, title_en:"Evidence 2 - The Website", title_ta:"ஆதாரம் 2 - வலைத்தளம்", penalty:3,
+      content_en:"Link: http://dtdc-track-fee-reschedule.tk\nNo lock, no https, asks full card + CVV\nReal: https://dtdc.in/tracking has lock symbol",
+      content_ta:"இணைப்பு: http://dtdc-track-fee-reschedule.tk\nபூட்டு இல்லை, https இல்லை, முழு கார்டு + CVV கேட்கிறது\nஉண்மை: https://dtdc.in/tracking பூட்டு சின்னம் உள்ளது",
+      hidden_en:"Hidden clue: For Rs 25, real company will NEVER ask CVV and OTP. CVV is secret.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: ரூ 25-க்கு உண்மையான நிறுவனம் CVV, OTP கேட்காது. CVV ரகசியம்.",
+      hint_en:"Why ask CVV for Rs 25? It's a trick", hint_ta:"ரூ 25-க்கு ஏன் CVV கேட்கிறார்கள்? தந்திரம்"
+    },
+    { id:3, title_en:"Evidence 3 - Bank Message", title_ta:"ஆதாரம் 3 - வங்கி செய்தி", penalty:5,
+      content_en:"Bank: 'Rs 2,000 taken for online shopping. If not you, call 1930.'\nRs 25 was only a trick to get card number.",
+      content_ta:"வங்கி: 'ஆன்லைன் ஷாப்பிங்கிற்கு ரூ 2,000 எடுக்கப்பட்டது. நீங்கள் இல்லை என்றால் 1930-ஐ அழைக்கவும்.'\nரூ 25 என்பது கார்டு எண் வாங்க ஒரு தந்திரம் மட்டுமே.",
+      hidden_en:"Hidden clue: Small money ask can be big cheating. If money gone, call 1930.",
+      hidden_ta:"மறைக்கப்பட்ட குறிப்பு: சிறு பணம் கேட்பது பெரிய ஏமாற்றாக இருக்கலாம். பணம் போனால் 1930-ஐ அழை.",
+      hint_en:"Small amount is bait for big stealing", hint_ta:"சிறு தொகை பெரிய திருட்டுக்கு தூண்டில்"
+    }
+  ],
+  q1:{ en:"Q1 (5 pts) In ONE word, what is this SMS? (easy word)", ta:"Q1 (5 மதிப்பெண்) ஒரு வார்த்தையில் இந்த SMS என்ன?", hint_en:"Answer can be: fake, scam, fraud, cheating, trick, lie", hint_ta:"பதில்: fake, போலி, ஏமாற்று, மோசடி", answer:["fake","scam","fraud","cheating","trick","lie","phishing","courier","delivery","cheat","bogus","false","போலி","ஏமாற்று","மோசடி","பொய்","fake message","fake sms"], points:5 },
+  q2:{ en:"Q2 (5 pts) What was Arjun's first mistake?", ta:"Q2 (5 மதிப்பெண்) அர்ஜுனின் முதல் தவறு என்ன?", opts:[{en:"He clicked short link bit.ly from unknown number", ta:"தெரியாத எண்ணில் இருந்து bit.ly சிறு இணைப்பை கிளிக் செய்தது"},{en:"He called real DTDC office number", ta:"உண்மையான DTDC அலுவலக எண்ணை அழைத்தது"},{en:"He checked his order in real app", ta:"உண்மையான செயலியில் ஆர்டரை பார்த்தது"},{en:"He deleted the SMS", ta:"SMS-ஐ நீக்கியது"}], correct:0, points:5 },
+  q3:{ en:"Q3 (5 pts) If you get such parcel SMS, what to do?", ta:"Q3 (5 மதிப்பெண்) இப்படி பார்சல் SMS வந்தால் என்ன செய்ய வேண்டும்?", opts:[{en:"Pay fast or parcel will go back", ta:"வேகமாக பணம் கட்டாவிட்டால் பார்சல் திரும்ப போய்விடும்"},{en:"Check order in real DTDC app or real website, never type CVV/OTP on unknown link", ta:"உண்மையான DTDC செயலி அல்லது தளத்தில் ஆர்டரை பார்த்து, தெரியாத இணைப்பில் CVV/OTP போடாமல் இருப்பது"},{en:"Send link to friends", ta:"இணைப்பை நண்பர்களுக்கு அனுப்புவது"},{en:"Type card details to check", ta:"பார்க்க கார்டு விவரம் போடுவது"}], correct:1, points:5 },
+  q4:{ en:"Q4 (10 pts) Put safe steps in correct order:", ta:"Q4 (10 மதிப்பெண்) பாதுகாப்பான படிகளை சரியான வரிசையில் வைக்கவும்:", sequences:[{label_en:"A) Get SMS → Click bit.ly → Type card CVV + OTP → Pay Rs 25", label_ta:"A) SMS வரும் → bit.ly கிளிக் செய் → கார்டு CVV + OTP போடு → ரூ 25 கட்டு", correct:false},{label_en:"B) Get SMS → Check order in real DTDC app/website → Don't type card on unknown link → Tell 1930 if doubt", label_ta:"B) SMS வரும் → உண்மையான DTDC செயலி/தளத்தில் ஆர்டரை பார் → தெரியாத இணைப்பில் கார்டு போடாதே → சந்தேகம் என்றால் 1930-ல் சொல்", correct:true},{label_en:"C) Send SMS to family group → Click link → Give all details", label_ta:"C) SMS-ஐ குடும்ப குழுவிற்கு அனுப்பு → இணைப்பை கிளிக் செய் → எல்லா விவரம் கொடு", correct:false},{label_en:"D) Call unknown number and give OTP", label_ta:"D) தெரியாத எண்ணை அழைத்து OTP கொடு", correct:false}], points:10 }
+}
+];
+
+let state = {
+  view:'register',
+  team:null, members:'',
+  r1_answers:new Array(10).fill(null),
+  r1_current:0,
+  r2_case_index:0,
+  r2_evidence:[[false,false,false],[false,false,false]],
+  r2_q1:['',''], r2_q2:[null,null], r2_q3:[null,null], r2_q4:[null,null],
+  startTime:null, timeLeft:R1_TIME,
+  r1TimeUsed:0, r2StartTime:null, r1Submitted:false, r2Status:null,
+  timerInt:null, submitted:false,
+  serverTeams:[],
+  revealedHints:{}
+};
+
+function saveState(){ try{ localStorage.setItem('tracex_state_v6', JSON.stringify({...state, timerInt:null})); }catch{} }
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem('tracex_state_v6'));
+    if(s){
+      state={...state,...s};
+      if(state.startTime && (state.view==='r1' || state.view==='r1_review')){
+        state.timeLeft = Math.max(0, R1_TIME - Math.floor((Date.now()-state.startTime)/1000));
+        if(state.timeLeft<=0) state.pendingSubmit='r1';
+      } else if(state.r2StartTime && state.view==='r2'){
+        state.timeLeft = Math.max(0, R2_TIME - Math.floor((Date.now()-state.r2StartTime)/1000));
+        if(state.timeLeft<=0 && !state.submitted) state.pendingSubmit='r2';
+      }
+    }
+  }catch{}
+}
+loadState();
+
+function render(){
+  const app=document.getElementById('app');
+  if(state.view==='register') app.innerHTML=registerView();
+  else if(state.view==='rules') app.innerHTML=rulesView();
+  else if(state.view==='r1') app.innerHTML=r1View();
+  else if(state.view==='r1_review') app.innerHTML=r1ReviewView();
+  else if(state.view==='r2') app.innerHTML=r2View();
+  else if(state.view==='waiting') app.innerHTML=waitingView();
+  else if(state.view==='result') app.innerHTML=resultView();
+  updateFooter(); updateTimerUI();
+  document.getElementById('roundLabel').textContent = state.view==='r2' ? `Round 2 · Case ${state.r2_case_index+1} of 2` : state.view==='r1' ? `Round 1` : state.view==='r1_review' ? `Round 1 review` : state.view==='waiting' ? 'Waiting for Round 2' : 'Ready to play';
+  if(((state.view==='r1' || state.view==='r1_review') && state.startTime || state.view==='r2' && state.r2StartTime) && !state.timerInt) startTimer();
+}
+
+function registerView(){
+  return `
+  <div style="margin:10px 0 22px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <span class="badge-live"><span class="dot"></span> Live • 15 + 15 min</span>
+      <span class="hero-kbd">Round 1: 10 Easy Stories • Round 2: 2 Investigations with Hidden Clues</span>
+    </div>
+    <h1 class="hero-title"><span class="wiggle">🔎</span> TRACE / X</h1>
+    <div style="margin-top:10px;color:var(--muted);font-size:18px;font-weight:700;max-width:640px;line-height:1.6;margin-top:22px">Two rounds, one timer. Easy English + Tamil. Find hidden clues in evidence!<br><span class="tamil">எளிய ஆங்கிலம் + தமிழ். ஆதாரத்தில் மறைக்கப்பட்ட குறிப்பைக் கண்டுபிடிக்கவும்.</span></div>
+  </div>
+  <div class="grid-main">
+    <div class="card">
+      <div class="card-header">🧑‍🤝‍🧑 Team Registration</div>
+      <div style="font-size:20px;font-weight:600;letter-spacing:-0.02em">Enter your team details</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:4px">One team per system • Please use English for team name (max 30 chars)</div>
+      <div class="field"><label>Team Name * / அணி பெயர் *</label><input id="teamInput" class="input" placeholder="Ex: 7A Cyber Squad" value="${escapeHtml(state.team||'')}" maxlength="30"></div>
+      <div class="field"><label>Members (Optional) / உறுப்பினர்கள்</label><input id="memberInput" class="input" placeholder="Arun, Priya" value="${escapeHtml(state.members||'')}" maxlength="100"></div>
+      <div class="field"><label>Class / வகுப்பு</label><input id="classInput" class="input" placeholder="7th Std" maxlength="20"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:18px" onclick="doRegister()">🚀 Start Challenge / தொடங்கு</button>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header">🗺️ Challenge Structure - Easy Words</div>
+        <div style="font-size:13.5px;line-height:1.7">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Round 1</span><span>10 Easy Q × 5 pts = 50 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Round 2</span><span>2 Cases × 25 pts = 50 pts</span></div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6">
+            Evidence penalty: -2, -3, -5 if you open<br>
+            But evidence has <span style="color:var(--green)">hidden clues inside</span> - click to see!<br>
+            Q1: One easy word (fake, cheating...) 5 pts<br>
+            Q2: Choose correct 5 pts<br>
+            Q3: Choose correct 5 pts<br>
+            Q4: Put steps in correct order 10 pts
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="color:var(--muted)">Total Time</span><span>15 min Round 1 + 15 min Round 2</span></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;background:var(--bg)"><div class="card-header">✅ Mission checklist</div>
+        <div style="font-size:16px;line-height:1.9">🔎 10 quick cases are ready<br>🕵️ 2 big investigations are ready<br>🔒 Evidence vault is locked (hidden clues inside)<br><span style="color:var(--green);font-weight:800">🟢 All set! Enter your team name to begin.</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="toggleBoard()">🏆 View Leaderboard</button>
+    </div>
+  </div>`;
+}
+
+function rulesView(){
+  return `
+  <div class="card" style="max-width:720px;margin:0 auto">
+    <div class="card-header">🗒️ Mission Briefing - Easy Rules</div>
+    <div style="font-size:26px;font-weight:600">🕵️ Welcome, ${escapeHtml(state.team)}!</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:6px">Round 1 has 15 minutes. After Round 1 the admin selects the teams who go to Round 2. Round 2 has its own 15 minutes. / Round 1 முடிந்ததும் தேர்வானவர்கள் மட்டும் Round 2 செல்லலாம்.</div>
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="scenario-box"><div class="label">Round 1 - Easy Stories</div>10 very easy stories<br>Simple English, simple Tamil<br>5 points each<br>Time: 15 minutes<br><br><span style="color:var(--muted);font-size:13px">Only easy words: fake, real, trick, cheating.</span></div>
+      <div class="scenario-box"><div class="label">Round 2 - Detective Work</div>2 big stories<br>Evidence cards have penalty (-2,-3,-5)<br>But inside evidence there is <span style="color:var(--green)">hidden clue</span> - click to see secret answer!<br>Think like detective<br><b>Only teams selected by admin</b><br>Time: 15 minutes</div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:18px;padding:14px" onclick="startR1()">🎯 Start Round 1 → Easy Stories</button>
+  </div>`;
+}
+
+function r1View(){
+  const c=CASES_R1[state.r1_current];
+  const ans=state.r1_answers[state.r1_current];
+  const progress=CASES_R1.map((_,i)=>{let cls='pdot'; if(i===state.r1_current) cls+=' active'; if(state.r1_answers[i]!==null) cls+=' done'; return `<div class="${cls}"></div>`;}).join('');
+  const reviewChips=CASES_R1.map((_,i)=>`<span class="review-chip ${state.r1_answers[i]!==null?'done':''} ${i===state.r1_current?'current':''}">Q${i+1}</span>`).join('');
+  const opts=c.opts.map((o,i)=>{const sel=ans===i?'sel':''; return `<div class="opt ${sel}" onclick="pickR1(${i})" tabindex="0" onkeydown="if(event.key==='Enter') pickR1(${i})"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`;}).join('');
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+    <div style="display:flex;align-items:center;gap:10px"><span class="hero-kbd">ROUND 1 • CASE ${c.id} / 10 - EASY</span><span style="font-size:13px;color:var(--muted)">${escapeHtml(c.title_en)} <span class="tamil">/ ${escapeHtml(c.title_ta)}</span></span></div>
+    <div class="mono" style="font-size:14px;color:var(--muted)">${state.r1_answers.filter(x=>x!==null).length}/10 answered</div>
+  </div>
+  <div class="progress">${progress}</div>
+  <div class="review-bar">${reviewChips}</div>
+  <div class="card">
+    <div class="scenario-box"><div class="label">Story - Easy Words / எளிய கதை</div><div>${escapeHtml(c.scenario_en)}</div><div class="tamil" style="margin-top:8px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">${escapeHtml(c.scenario_ta)}</div></div>
+    <div style="margin-top:16px"><div class="q-title">Q${c.id}. ${escapeHtml(c.q_en)} <span class="ta tamil">${escapeHtml(c.q_ta)}</span></div><div style="margin-top:12px">${opts}</div></div>
+  </div><div style="height:70px"></div>`;
+}
+
+function r1ReviewView(){
+  const answered = state.r1_answers.filter(x=>x!==null).length;
+  const list = CASES_R1.map((c,i)=>{
+    const ans = state.r1_answers[i];
+    const text = ans!==null ? c.opts[ans].en : 'Not answered';
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span>Q${i+1}: ${escapeHtml(c.title_en)}</span><span style="color:${ans!==null?'var(--green)':'var(--red)'}">${escapeHtml(text)}</span></div>`;
+  }).join('');
+  return `
+  <div class="card" style="max-width:720px;margin:0 auto">
+    <div class="card-header">Round 1 Review</div>
+    <div style="font-size:20px;font-weight:600">You answered ${answered}/10 questions</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:6px">Check again. You can go back. After you submit Round 1 you cannot change answers. Admin will then select teams for Round 2.</div>
+    <div style="margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:300px;overflow:auto">${list}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+      <button class="btn btn-ghost" onclick="backToR1()">← Back to Round 1</button>
+      <button class="btn btn-primary" onclick="confirmGoR2()">Submit Round 1 ✓</button>
+    </div>
+  </div>`;
+}
+
+function r2View(){
+  const caseIdx=state.r2_case_index;
+  const r2=ROUND2_CASES[caseIdx];
+  const evState=state.r2_evidence[caseIdx];
+  const evHtml=r2.evidence.map((ev,i)=>{
+    const opened=evState[i];
+    const key = `${caseIdx}-${i}`;
+    const hintRevealed = state.revealedHints[key];
+    return `<div class="ev-card ${opened?'opened':''}" onclick="openEv(${i})" tabindex="0">
+      <div class="ev-head"><span>${escapeHtml(ev.title_en)} <span class="tamil" style="text-transform:none">/ ${escapeHtml(ev.title_ta)}</span></span><span class="penalty ${opened?'used':''}">${opened? 'USED -'+ev.penalty : '-'+ev.penalty+' pts'}</span></div>
+      ${opened? `<div class="ev-body">
+        <div style="white-space:pre-wrap;background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:10px;font-family:var(--display);font-size:14px">${escapeHtml(ev.content_en)}</div>
+        <div class="tamil" style="margin-top:8px;color:var(--muted);font-size:14px">${escapeHtml(ev.content_ta)}</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--yellow)">Hint: ${escapeHtml(ev.hint_en)}<br><span class="tamil">${escapeHtml(ev.hint_ta)}</span></div>
+        <details class="hidden-clue" style="margin-top:10px">
+          <summary>🔍 Hidden clue - Click to see secret answer / மறைக்கப்பட்ட குறிப்பு</summary>
+          <div class="clue-inner">
+            <div style="color:var(--green);font-weight:700">Secret: ${escapeHtml(ev.hidden_en)}</div>
+            <div class="tamil" style="margin-top:6px">${escapeHtml(ev.hidden_ta)}</div>
+            <div style="margin-top:8px"><span class="blur-text ${hintRevealed?'revealed':''}" onclick="event.stopPropagation(); revealHint('${key}', this)">👁️ Click to reveal blurred answer: ${escapeHtml((ev.hidden_en.split(':')[1] || ev.hidden_en).trim())}</span></div>
+          </div>
+        </details>
+      </div>` : `<div class="ev-body" style="color:var(--muted);font-size:14px">🎁 Click to open evidence. Penalty -${ev.penalty} pts. Inside hidden clue!<br><span class="tamil">ஆதாரத்தை திறக்க கிளிக் செய்யவும் - ${ev.penalty} மதிப்பெண் குறையும். உள்ளே மறைக்கப்பட்ட குறிப்பு!</span></div>`}
+    </div>`;
+  }).join('');
+
+  const q2opts=r2.q2.opts.map((o,i)=>`<div class="opt ${state.r2_q2[caseIdx]===i?'sel':''}" onclick="pickR2('q2',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
+  const q3opts=r2.q3.opts.map((o,i)=>`<div class="opt ${state.r2_q3[caseIdx]===i?'sel':''}" onclick="pickR2('q3',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
+  const q4opts=r2.q4.sequences.map((s,i)=>`<div class="opt ${state.r2_q4[caseIdx]===i?'sel':''}" onclick="pickR2('q4',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(s.label_en)}</div><span class="ta tamil">${escapeHtml(s.label_ta)}</span></div></div>`).join('');
+
+  const progressR2 = ROUND2_CASES.map((_,idx)=>{
+    const isCurrent = idx===caseIdx;
+    const answered = (state.r2_q1[idx]?1:0)+(state.r2_q2[idx]!==null?1:0)+(state.r2_q3[idx]!==null?1:0)+(state.r2_q4[idx]!==null?1:0);
+    const cls = answered===4 ? 'done' : isCurrent ? 'active' : '';
+    return `<div class="pdot ${cls}" title="Case ${idx+1}: ${answered}/4"></div>`;
+  }).join('');
+
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+    <div class="tabs"><button class="tab ${caseIdx===0?'active':''}" onclick="switchR2Case(0)">Case 1: Scholarship Rs 50k</button><button class="tab ${caseIdx===1?'active':''}" onclick="switchR2Case(1)">Case 2: Parcel Rs 25 trick</button></div>
+    <div style="display:flex;align-items:center;gap:10px"><span class="hero-kbd">ROUND 2 • CASE ${caseIdx+1} / 2 - HIDDEN CLUES INSIDE 🎁</span></div>
+  </div>
+  <div class="progress">${progressR2}</div>
+  <div class="card">
+    <div style="font-size:22px;font-weight:700">🕵️ ${escapeHtml(r2.title_en)}<br><span class="tamil" style="font-size:15px;color:var(--muted)">${escapeHtml(r2.title_ta)}</span></div>
+    <div class="scenario-box" style="margin-top:12px"><div class="label">Story - Easy Words / எளிய கதை</div><div>${escapeHtml(r2.story_en)}</div><div class="tamil" style="margin-top:8px;color:var(--muted)">${escapeHtml(r2.story_ta)}</div></div>
+    <div style="margin-top:14px"><div class="card-header">🔍 Evidence Cards - Penalty if opened BUT hidden clue inside! / ஆதார அட்டை - உள்ளே ரகசிய குறிப்பு!</div><div class="ev-grid">${evHtml}</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-header">🧠 Questions - Easy Words / எளிய கேள்விகள்</div>
+    <div style="margin-top:12px">
+      <div class="q-title">${escapeHtml(r2.q1.en)}<span class="ta tamil">${escapeHtml(r2.q1.ta)}</span></div>
+      <input id="r2q1" class="input" style="margin-top:10px" placeholder="Type one word / ஒரு வார்த்தை எழுதவும்" value="${escapeHtml(state.r2_q1[caseIdx])}" oninput="onQ1(${caseIdx},this.value)" maxlength="30">
+    </div>
+    <div style="height:1px;background:var(--border);margin:18px 0"></div>
+    <div><div class="q-title">${escapeHtml(r2.q2.en)}<span class="ta tamil">${escapeHtml(r2.q2.ta)}</span></div><div style="margin-top:10px">${q2opts}</div></div>
+    <div style="height:1px;background:var(--border);margin:18px 0"></div>
+    <div><div class="q-title">${escapeHtml(r2.q3.en)}<span class="ta tamil">${escapeHtml(r2.q3.ta)}</span></div><div style="margin-top:10px">${q3opts}</div></div>
+    <div style="height:1px;background:var(--border);margin:18px 0"></div>
+    <div><div class="q-title">${escapeHtml(r2.q4.en)}<span class="ta tamil">${escapeHtml(r2.q4.ta)}</span></div><div style="margin-top:10px">${q4opts}</div></div>
+  </div>
+  <div style="height:80px"></div>`;
+}
+
+// Q1 marking: whole words only (an empty or 1-letter answer must NOT score)
+function normalizeAnswer(v){ return (v||'').toLowerCase().replace(/[.,!?;:'"()\[\]\-_\/\\|]/g,' ').replace(/\s+/g,' ').trim(); }
+function isQ1Correct(value, accepted){
+  const txt=normalizeAnswer(value);
+  if(!txt) return false;
+  const tokens=txt.split(' ');
+  return accepted.some(a=>{
+    a=normalizeAnswer(a);
+    if(a.includes(' ')) return (' '+txt+' ').includes(' '+a+' ');
+    // allow simple word endings: fakes, cheated, போலியானது
+    return tokens.some(t=> t===a || t.startsWith(a));
+  });
+}
+function computeScore(){
+  const history=[];
+  let r1Score=0;
+  CASES_R1.forEach((c,i)=>{
+    const a=state.r1_answers[i];
+    const ok=a===c.correct;
+    const pts=ok?5:0; r1Score+=pts;
+    history.push({round:1, q:`R1 Q${i+1}: ${c.title_en}`, your:a!==null&&a!==undefined?`${String.fromCharCode(65+a)}) ${c.opts[a].en}`:'Not answered', right:`${String.fromCharCode(65+c.correct)}) ${c.opts[c.correct].en}`, ok, pts, max:5});
+  });
+  let r2Score=0;
+  const r2Details=[];
+  ROUND2_CASES.forEach((r2,idx)=>{
+    const q1Val=state.r2_q1[idx]||'';
+    const q1ok=isQ1Correct(q1Val, r2.q1.answer);
+    const q2ok=state.r2_q2[idx]===r2.q2.correct;
+    const q3ok=state.r2_q3[idx]===r2.q3.correct;
+    const q4ok=state.r2_q4[idx]!==null && state.r2_q4[idx]!==undefined && !!r2.q4.sequences[state.r2_q4[idx]]?.correct;
+    const caseScore=(q1ok?r2.q1.points:0)+(q2ok?r2.q2.points:0)+(q3ok?r2.q3.points:0)+(q4ok?r2.q4.points:0);
+    const pick=(opts,v,key)=> v!==null&&v!==undefined ? `${String.fromCharCode(65+v)}) ${opts[v][key]}` : 'Not answered';
+    const q4right=r2.q4.sequences.findIndex(x=>x.correct);
+    const cn=`R2 Case ${idx+1}`;
+    history.push({round:2, q:`${cn} Q1: One word`, your:q1Val.trim()||'Not answered', right:'fake / scam / போலி / ஏமாற்று', ok:q1ok, pts:q1ok?r2.q1.points:0, max:r2.q1.points});
+    history.push({round:2, q:`${cn} Q2: First mistake`, your:pick(r2.q2.opts,state.r2_q2[idx],'en'), right:pick(r2.q2.opts,r2.q2.correct,'en'), ok:q2ok, pts:q2ok?r2.q2.points:0, max:r2.q2.points});
+    history.push({round:2, q:`${cn} Q3: What to do`, your:pick(r2.q3.opts,state.r2_q3[idx],'en'), right:pick(r2.q3.opts,r2.q3.correct,'en'), ok:q3ok, pts:q3ok?r2.q3.points:0, max:r2.q3.points});
+    history.push({round:2, q:`${cn} Q4: Safe steps`, your:pick(r2.q4.sequences,state.r2_q4[idx],'label_en'), right:pick(r2.q4.sequences,q4right,'label_en'), ok:q4ok, pts:q4ok?r2.q4.points:0, max:r2.q4.points});
+    r2Details.push({title:r2.title_en, score:caseScore, max:25, q1ok, q2ok, q3ok, q4ok});
+    r2Score+=caseScore;
+  });
+  const penalty=getPenalty();
+  let total=r1Score+r2Score-penalty; if(total<0) total=0; if(total>100) total=100;
+  return {r1Score,r2Score,penalty,total,r2Details,history};
+}
+
+function resultView(){
+  const {r1Score,r2Score,penalty,total,r2Details,history}=computeScore();
+  const timeUsed=(state.r1TimeUsed||0)+(state.r2StartTime? Math.min(R2_TIME, Math.round((Date.now()-state.r2StartTime)/1000)):0);
+  const mins=Math.floor(timeUsed/60), secs=timeUsed%60;
+
+  const r2Breakdown = r2Details.map((d,i)=>`
+    <div style="background:var(--bg);border:2px solid var(--ink);border-radius:14px;padding:12px;margin:8px 0">
+      <div style="font-weight:700;font-size:14px">${escapeHtml(d.title)}: ${d.score}/${d.max} pts</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6">
+        Q1 Easy word: ${d.q1ok?'✅ 5':'❌ 0'}<br>
+        Q2: ${d.q2ok?'✅ 5':'❌ 0'} (Correct: ${String.fromCharCode(65+ROUND2_CASES[i].q2.correct)})<br>
+        Q3: ${d.q3ok?'✅ 5':'❌ 0'} (Correct: ${String.fromCharCode(65+ROUND2_CASES[i].q3.correct)})<br>
+        Q4 Steps: ${d.q4ok?'✅ 10':'❌ 0'} (Correct: Option B)
+      </div>
+    </div>
+  `).join('');
+
+  return `
+  <div class="card" style="max-width:800px;margin:0 auto;text-align:center">
+    <div class="card-header" style="justify-content:center">🎉 Final Results - Easy Words Version</div>
+    <div style="font-size:14px;color:var(--muted)">Team: ${escapeHtml(state.team)} • Time Taken: ${mins}m ${secs}s • Penalty: -${penalty}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:16px 0">
+      <div style="background:var(--bg);border:2.5px solid var(--ink);border-radius:14px;padding:10px"><div style="font-size:12px;color:var(--muted);font-family:var(--display)">ROUND 1</div><div style="font-size:22px;font-weight:700">${r1Score}/50</div></div>
+      <div style="background:var(--bg);border:2.5px solid var(--ink);border-radius:14px;padding:10px"><div style="font-size:12px;color:var(--muted);font-family:var(--display)">ROUND 2</div><div style="font-size:22px;font-weight:700">${r2Score}/50</div></div>
+      <div style="background:var(--bg);border:2.5px solid var(--ink);border-radius:14px;padding:10px"><div style="font-size:12px;color:var(--muted);font-family:var(--display)">PENALTY</div><div style="font-size:22px;font-weight:700;color:var(--red)">-${penalty}</div></div>
+      <div style="background:var(--ink);border:2.5px solid var(--ink);border-radius:14px;padding:10px;color:#fff"><div style="font-size:12px;font-family:var(--display)">TOTAL SCORE</div><div style="font-size:22px;font-weight:700">${total}/100</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:15px;font-weight:700">${total>=80?'🏆 Excellent Detective! / சிறந்த துப்பறிவாளர்!': total>=50?'👍 Good Job! / நன்று!':'💪 Keep Learning! / தொடர்ந்து கற்கவும்!'}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="toggleBoard()">🏆 View Leaderboard</button>
+      <button class="btn btn-ghost" onclick="restart()">Register New Team</button>
+    </div>
+  </div>
+  <div style="max-width:800px;margin:18px auto 0">
+    <div class="card-header">Detailed Breakdown / விரிவான பகுப்பாய்வு</div>
+    <div class="card" style="padding:12px"><div style="font-size:13px;font-weight:700">Round 1: ${r1Score}/50 (5 points each - easy stories)</div></div>
+    ${r2Breakdown}
+  </div>
+  <div style="max-width:800px;margin:18px auto 0">
+    <div class="card-header">📜 Answer History - Right &amp; Wrong / பதில் வரலாறு - சரி &amp; தவறு</div>
+    <div class="card" style="padding:12px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left">
+        <thead><tr style="border-bottom:2px solid var(--ink)"><th style="padding:6px">Question</th><th style="padding:6px">Your answer</th><th style="padding:6px">Correct answer</th><th style="padding:6px;text-align:center">Result</th><th style="padding:6px;text-align:right">Points</th></tr></thead>
+        <tbody>
+          ${history.map(h=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700">${escapeHtml(h.q)}</td><td style="padding:6px;color:${h.ok?'var(--green)':'var(--red)'}">${escapeHtml(h.your)}</td><td style="padding:6px;color:var(--muted)">${escapeHtml(h.right)}</td><td style="padding:6px;text-align:center">${h.ok?'✅ Right':'❌ Wrong'}</td><td style="padding:6px;text-align:right;font-weight:700">${h.pts}/${h.max}</td></tr>`).join('')}
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;font-weight:700" colspan="4">Evidence penalty / ஆதார அபராதம்</td><td style="padding:6px;text-align:right;font-weight:700;color:var(--red)">-${penalty}</td></tr>
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--ink)"><td style="padding:6px" colspan="3">Right: <b style="color:var(--green)">${history.filter(h=>h.ok).length}</b> • Wrong: <b style="color:var(--red)">${history.filter(h=>!h.ok).length}</b> of ${history.length} questions</td><td style="padding:6px;text-align:center;font-weight:700">TOTAL POINTS</td><td style="padding:6px;text-align:right;font-weight:800;font-size:16px">${total}/100</td></tr>
+          <tr><td style="padding:6px;color:var(--muted);font-size:12px" colspan="5">Round 1 ${r1Score}/50 + Round 2 ${r2Score}/50 − Penalty ${penalty} = ${total}</td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>`;
+}
+
+function doRegister(){
+  const t=document.getElementById('teamInput').value.trim();
+  const m=document.getElementById('memberInput').value.trim();
+  if(!t){ alert('Please enter your team name / அணி பெயரை உள்ளிடவும்'); return; }
+  if(t.length<2){ alert('Team name must be at least 2 characters'); return; }
+  if(t.length>30){ alert('Team name must be 30 characters or less'); return; }
+  state.team=t; state.members=m;
+  state.view='rules'; saveState(); render();
+  fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:t,members:m})}).catch(()=>{});
+  // Also try cloud for Netlify
+  (async()=>{
+    try{
+      let cloudTeams = await cloudGetTeams();
+      if(!cloudTeams.find(x=>x.team.toLowerCase()===t.toLowerCase())){
+        cloudTeams.push({team:t,members:m,r1:0,r2:0,penalty:0,score:0,time:0,status:"Playing",timestamp:Date.now()});
+        await cloudSaveTeams(cloudTeams);
+      }
+    }catch(e){}
+  })();
+}
+function startR1(){
+  state.view='r1'; state.r1_current=0; state.r1_answers=new Array(10).fill(null);
+  if(!state.startTime){ state.startTime=Date.now(); state.timeLeft=R1_TIME; startTimer(); }
+  saveState(); render();
+  document.getElementById('footerNav').style.display='flex';
+  document.getElementById('totIdx').textContent='10';
+}
+function pickR1(i){ state.r1_answers[state.r1_current]=i; saveState(); render(); }
+function pickR2(q,i){ const idx=state.r2_case_index; if(q==='q2') state.r2_q2[idx]=i; if(q==='q3') state.r2_q3[idx]=i; if(q==='q4') state.r2_q4[idx]=i; saveState(); render(); }
+function onQ1(idx,v){ state.r2_q1[idx]=v; saveState(); }
+function openEv(i){ const idx=state.r2_case_index; if(!state.r2_evidence[idx][i]){ state.r2_evidence[idx][i]=true; saveState(); render(); } }
+function revealHint(key, el){
+  state.revealedHints[key]=true;
+  if(el) el.classList.add('revealed');
+  saveState();
+}
+function switchR2Case(i){
+  const curr = state.r2_case_index;
+  const answeredCurr = (state.r2_q1[curr]?1:0)+(state.r2_q2[curr]!==null?1:0)+(state.r2_q3[curr]!==null?1:0)+(state.r2_q4[curr]!==null?1:0);
+  if(answeredCurr===0 && i!==curr){
+    if(!confirm('You have not answered any question in the current case. Are you sure you want to switch? / தற்போதைய வழக்கில் எந்த கேள்விக்கும் பதிலளிக்கவில்லை. மாற விரும்புகிறீர்களா?')) return;
+  }
+  state.r2_case_index=i; saveState(); render();
+}
+function getPenalty(){ let total=0; state.r2_evidence.forEach((evArr,caseIdx)=>{ evArr.forEach((opened,evIdx)=>{ if(opened) total+=ROUND2_CASES[caseIdx].evidence[evIdx].penalty; }); }); return total; }
+
+function nextCase(){
+  if(state.view==='r1'){
+    if(state.r1_current<9){ state.r1_current++; saveState(); render(); }
+    else { state.view='r1_review'; saveState(); render(); }
+  } else if(state.view==='r2'){
+    if(state.r2_case_index===0){ state.r2_case_index=1; saveState(); render(); document.getElementById('totIdx').textContent='Round 2: Case 2/2'; }
+    else { submitAll(); }
+  }
+}
+function prevCase(){
+  if(state.view==='r1' && state.r1_current>0){ state.r1_current--; saveState(); render(); }
+  else if(state.view==='r1' && state.r1_current===0){ state.view='rules'; saveState(); render(); }
+  else if(state.view==='r1_review'){ state.view='r1'; state.r1_current=9; saveState(); render(); }
+  else if(state.view==='r2' && state.r2_case_index===1){ state.r2_case_index=0; saveState(); render(); }
+}
+function backToR1(){ state.view='r1'; state.r1_current=0; saveState(); render(); }
+function confirmGoR2(){
+  const answered = state.r1_answers.filter(x=>x!==null).length;
+  if(answered<10){
+    if(!confirm(`You have answered only ${answered}/10 questions in Round 1. Submit Round 1 now? You cannot change answers after this. / Round 1-ல் ${answered}/10 கேள்விகளுக்கு மட்டுமே பதிலளித்துள்ளீர்கள். சமர்ப்பிக்க விரும்புகிறீர்களா?`)) return;
+  }
+  submitRound1();
+}
+function submitRound1(){
+  if(state.r1Submitted){ state.view='waiting'; saveState(); render(); pollR2Status(); return; }
+  clearInterval(state.timerInt); state.timerInt=null;
+  state.r1TimeUsed=state.startTime? Math.min(R1_TIME, Math.round((Date.now()-state.startTime)/1000)):0;
+  state.r1Submitted=true; state.r2Status='waiting'; state.view='waiting';
+  saveState(); render();
+  sendRound1().then(pollR2Status);
+}
+function sendRound1(){
+  const {r1Score}=computeScore();
+  return fetch('/api/round1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:state.team,members:state.members,r1Score,r1Time:state.r1TimeUsed,r1Answers:state.r1_answers})})
+    .then(r=>{ state.r1Sent=r.ok; saveState(); }).catch(()=>{});
+}
+let pollTimer=null;
+async function pollR2Status(){
+  clearTimeout(pollTimer);
+  if(state.view!=='waiting') return;
+  if(!state.r1Sent) await sendRound1();
+  try{
+    const res=await fetch('/api/round1?team='+encodeURIComponent(state.team));
+    if(res.ok){
+      const {status}=await res.json();
+      if(status!==state.r2Status && state.view==='waiting'){ state.r2Status=status; saveState(); render(); }
+    }
+  }catch{}
+  if(state.view==='waiting' && state.r2Status!=='rejected') pollTimer=setTimeout(pollR2Status,5000);
+}
+function startR2(){
+  if(state.r2Status!=='approved') return;
+  state.view='r2'; state.r2_case_index=0; state.r2StartTime=Date.now(); state.timeLeft=R2_TIME;
+  saveState(); render(); startTimer();
+}
+function finishWithoutR2(){ submitAll(); }
+function waitingView(){
+  const {r1Score}=computeScore();
+  const st=state.r2Status;
+  const body = st==='approved'
+    ? `<div style="font-size:24px;font-weight:700;color:var(--green)">🎉 Selected for Round 2!</div><div class="tamil" style="margin-top:6px">வாழ்த்துக்கள்! நீங்கள் Round 2-க்கு தேர்வாகியுள்ளீர்கள்.</div>
+       <div style="color:var(--muted);font-size:13px;margin-top:8px">Round 2 timer (15 minutes) starts when you press the button.</div>
+       <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px" onclick="startR2()">🕵️ Start Round 2 →</button>`
+    : st==='rejected'
+    ? `<div style="font-size:22px;font-weight:700;color:var(--red)">Not selected for Round 2</div><div class="tamil" style="margin-top:6px">இந்த முறை Round 2-க்கு தேர்வாகவில்லை. நன்றாக முயற்சி செய்தீர்கள்!</div>
+       <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px" onclick="finishWithoutR2()">See my answers &amp; points →</button>`
+    : `<div style="font-size:22px;font-weight:700">⏳ Waiting for admin to select Round 2 teams…</div><div class="tamil" style="margin-top:6px">Round 2-க்கு தேர்வு செய்யும் வரை காத்திருக்கவும்…</div>
+       <div style="color:var(--muted);font-size:13px;margin-top:8px">This page checks every 5 seconds. Do not close it.${state.r1Sent?'':'<br><span style="color:var(--red)">Could not reach server yet - retrying…</span>'}</div>`;
+  return `<div class="card" style="max-width:640px;margin:0 auto;text-align:center">
+    <div class="card-header" style="justify-content:center">✅ Round 1 Submitted</div>
+    <div style="font-size:14px;color:var(--muted)">Team: ${escapeHtml(state.team)} • Round 1 score: <b>${r1Score}/50</b></div>
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+    ${body}
+  </div>`;
+}
+
+// ---------- ADMIN: select teams for Round 2 ----------
+let adminPin=null, adminTimer=null;
+function openAdmin(){
+  if(!adminPin){
+    try{ adminPin=sessionStorage.getItem('tracex_admin_pin'); }catch{}
+    if(!adminPin){ adminPin=prompt('Enter admin PIN / நிர்வாகி PIN'); if(!adminPin) return; }
+  }
+  document.getElementById('adminPanel').classList.add('open');
+  loadAdmin();
+}
+function closeAdmin(){ document.getElementById('adminPanel').classList.remove('open'); clearTimeout(adminTimer); }
+async function adminFetch(method, body, query){
+  return fetch('/api/admin/teams'+(query||''),{method,headers:{'Content-Type':'application/json','x-admin-pin':adminPin||''},body:body?JSON.stringify(body):undefined});
+}
+async function loadAdmin(){
+  clearTimeout(adminTimer);
+  const box=document.getElementById('adminBody');
+  let res;
+  try{ res=await adminFetch('GET'); }catch{ box.innerHTML='<div style="color:var(--red)">Cannot reach server.</div>'; return; }
+  if(res.status===401){ try{ sessionStorage.removeItem('tracex_admin_pin'); }catch{} adminPin=null; closeAdmin(); alert('Wrong PIN'); return; }
+  if(!res.ok){ const e=await res.json().catch(()=>({})); box.innerHTML=`<div style="color:var(--red)">${escapeHtml(e.error||'Server error')}</div>`; return; }
+  try{ sessionStorage.setItem('tracex_admin_pin',adminPin); }catch{}
+  const rows=await res.json();
+  rows.sort((a,b)=> b.r1Score-a.r1Score || a.r1Time-b.r1Time);
+  const badge=s=> s==='approved'?'<span style="color:var(--green);font-weight:800">✅ Selected</span>': s==='rejected'?'<span style="color:var(--red);font-weight:800">❌ Not selected</span>':'<span style="color:var(--yellow);font-weight:800">⏳ Waiting</span>';
+  const waiting=rows.filter(r=>r.status==='waiting').length;
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div class="mono" style="font-size:13px;color:var(--muted)">${rows.length} teams finished Round 1 • ${waiting} waiting • ${rows.filter(r=>r.status==='approved').length} selected</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-small" onclick="adminSet(null,'approved')" ${waiting?'':'disabled'}>✅ Select all waiting</button>
+        <button class="btn btn-ghost btn-small" onclick="adminSet(null,'rejected')" ${waiting?'':'disabled'}>❌ Reject all waiting</button>
+        <button class="btn btn-ghost btn-small" onclick="adminClear()">🗑️ Clear list</button>
+      </div>
+    </div>
+    <div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Team</th><th>Round 1 (50)</th><th>R1 Time</th><th>Status</th><th>Action</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(r.team)}</b><br><span style="color:var(--muted);font-size:13px">${escapeHtml(r.members||'')}</span></td><td style="font-weight:700">${r.r1Score}</td><td>${Math.floor(r.r1Time/60)}m ${r.r1Time%60}s</td><td>${badge(r.status)}</td>
+      <td style="white-space:nowrap"><button class="btn btn-primary btn-small" onclick='adminSet(${JSON.stringify(r.team).replace(/'/g,"&#39;")},"approved")' ${r.status==='approved'?'disabled':''}>Select</button>
+      <button class="btn btn-ghost btn-small" onclick='adminSet(${JSON.stringify(r.team).replace(/'/g,"&#39;")},"rejected")' ${r.status==='rejected'?'disabled':''}>Reject</button></td></tr>`).join('') || '<tr><td colspan=6 style="text-align:center;color:var(--muted);padding:18px">No team has finished Round 1 yet</td></tr>'}
+    </tbody></table></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">Auto-refreshes every 5 seconds. Selected teams see a "Start Round 2" button on their screen.</div>`;
+  if(document.getElementById('adminPanel').classList.contains('open')) adminTimer=setTimeout(loadAdmin,5000);
+}
+async function adminSet(team,status){
+  const body=team? {team,status} : {allWaiting:true,status};
+  try{ await adminFetch('POST',body); }catch{}
+  loadAdmin();
+}
+async function adminClear(){
+  if(!confirm('Remove all teams from the Round 2 selection list?')) return;
+  try{ await adminFetch('DELETE'); }catch{}
+  loadAdmin();
+}
+
+function updateFooter(){
+  const foot=document.getElementById('footerNav');
+  const penaltyWrap=document.getElementById('penaltyWrap');
+  if(state.view!=='r1' && state.view!=='r1_review' && state.view!=='r2'){ foot.style.display='none'; return; }
+  foot.style.display='flex';
+  if(state.view==='r1'){
+    document.getElementById('curIdx').textContent=state.r1_current+1;
+    document.getElementById('totIdx').textContent='10';
+    document.getElementById('answeredCount').textContent=state.r1_answers.filter(x=>x!==null).length;
+    document.getElementById('nextBtn').textContent= state.r1_current===9 ? 'Review Round 1 →' : 'Next →';
+    if(penaltyWrap) penaltyWrap.style.display='none';
+  } else if(state.view==='r1_review'){
+    document.getElementById('curIdx').textContent='Review';
+    document.getElementById('totIdx').textContent='R1';
+    document.getElementById('answeredCount').textContent=state.r1_answers.filter(x=>x!==null).length;
+    document.getElementById('nextBtn').textContent='Submit Round 1 ✓';
+    if(penaltyWrap) penaltyWrap.style.display='none';
+  } else {
+    const idx=state.r2_case_index;
+    document.getElementById('curIdx').textContent=`Round 2 - Case ${idx+1}`;
+    document.getElementById('totIdx').textContent=`2`;
+    const answered = (state.r2_q1[idx]?1:0)+(state.r2_q2[idx]!==null?1:0)+(state.r2_q3[idx]!==null?1:0)+(state.r2_q4[idx]!==null?1:0);
+    document.getElementById('answeredCount').textContent=answered+'/4';
+    document.getElementById('nextBtn').textContent= state.r2_case_index===1 ? 'Submit All ✓' : 'Next Case →';
+    if(penaltyWrap){ penaltyWrap.style.display='inline'; document.getElementById('penaltyView').textContent=getPenalty(); }
+  }
+}
+function startTimer(){
+  clearInterval(state.timerInt);
+  state.timerInt=setInterval(()=>{
+    if(state.view!=='r1' && state.view!=='r1_review' && state.view!=='r2') return;
+    state.timeLeft--; if(state.timeLeft<=0){ clearInterval(state.timerInt); if(state.view==='r2') submitAll(); else submitRound1(); }
+    updateTimerUI(); if(state.timeLeft%5===0) saveState();
+  },1000);
+}
+function updateTimerUI(){
+  const el=document.getElementById('timer'); if(!el) return;
+  const m=Math.floor(state.timeLeft/60), s=state.timeLeft%60;
+  el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle('low', state.timeLeft<=300);
+  const st=document.getElementById('statTime'); if(st) st.textContent=el.textContent;
+}
+function submitAll(){
+  clearInterval(state.timerInt);
+  const {r1Score,r2Score,penalty,total}=computeScore();
+  const r2Used=state.r2StartTime? Math.min(R2_TIME, Math.round((Date.now()-state.r2StartTime)/1000)):0;
+  const timeUsed=(state.r1TimeUsed||0)+r2Used;
+  const notSelected=state.r2Status==='rejected';
+  const entry={team:state.team,members:state.members,r1:r1Score,r2:r2Score,penalty:penalty,score:total,time:timeUsed,timestamp:Date.now(),status:notSelected?'Not selected for R2':'Completed'};
+  saveTeam(entry);
+  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)}).catch(()=>{});
+  saveToCloud(entry);
+  state.view='result'; state.submitted=true; saveState(); render(); setTimeout(()=>toggleBoard(),600);
+}
+function saveTeam(entry){
+  let all=getAllTeams(); all=all.filter(x=>x.team!==entry.team); all.push(entry);
+  try{ localStorage.setItem('tracex_all_teams',JSON.stringify(all)); }catch{}
+  state.serverTeams = all;
+  updateBoard();
+  // cloud backup is done in submitAll via saveToCloud
+}
+function getAllTeams(){ try{ return JSON.parse(localStorage.getItem('tracex_all_teams')||'[]'); }catch{return []} }
+async function updateBoard(){
+  let teams=getAllTeams();
+  let usedCloud = false;
+  try{
+    const res=await fetch('/api/scoreboard');
+    if(res.ok){
+      const data=await res.json();
+      if(Array.isArray(data)&&data.length>0){ teams=data; state.serverTeams=data; }
+    } else {
+      // /api not available -> try cloud (Netlify)
+      throw new Error("no api");
+    }
+  }catch{
+    // Try cloud fallback for Netlify
+    try{
+      const cloudTeams = await cloudGetTeams();
+      if(Array.isArray(cloudTeams) && cloudTeams.length>0){
+        teams = cloudTeams;
+        state.serverTeams = cloudTeams;
+        usedCloud = true;
+        isCloudMode = true;
+      }
+    }catch(e){}
+  }
+  // If still local only and we are on Netlify, try cloud again
+  if(!usedCloud && teams.length===0){
+    try{
+      const cloudTeams = await cloudGetTeams();
+      if(cloudTeams.length>0){ teams=cloudTeams; state.serverTeams=cloudTeams; usedCloud=true; }
+    }catch(e){}
+  }
+  teams.sort((a,b)=> b.score - a.score || a.time - b.time);
+  document.getElementById('statTeams').textContent=teams.length;
+  const avg=teams.length? Math.round(teams.reduce((s,t)=>s+t.score,0)/teams.length):0;
+  document.getElementById('statAvg').textContent=avg;
+  const tbody=document.querySelector('#boardTable tbody');
+  tbody.innerHTML=teams.map((t,i)=>{ const m=Math.floor(t.time/60), s=t.time%60; return `<tr><td>#${i+1}</td><td><b>${escapeHtml(t.team)}</b><br><span style="color:var(--muted);font-size:13px">${escapeHtml(t.members||'')}</span></td><td>${t.r1||0}</td><td>${t.r2||0}</td><td style="color:var(--red)">-${t.penalty||0}</td><td style="font-weight:600">${t.score}</td><td>${m}m ${s}s</td></tr>`; }).join('') || `<tr><td colspan=7 style="text-align:center;color:var(--muted);padding:18px">No teams have completed yet / இன்னும் எந்த அணியும் முடிக்கவில்லை<br><span style="font-size:12px">${isCloudMode||usedCloud?'🌐 Cloud mode active - scores sync across internet':'💻 Local mode - use server.py for lab sync or wait for cloud'}</span></td></tr>`;
+  const dot=document.getElementById('refreshDot'); if(dot){ dot.style.opacity='1'; setTimeout(()=>dot.style.opacity='0',500); }
+  // Update status text
+  const roundLabel = document.getElementById('roundLabel');
+  if(roundLabel && (isCloudMode||usedCloud)){
+    if(!roundLabel.textContent.includes('Cloud')){
+      // keep original but add cloud indicator in board
+    }
+  }
+}
+function toggleBoard(){ const b=document.getElementById('board'); b.classList.toggle('open'); if(b.classList.contains('open')) updateBoard(); }
+function exportCSV(){
+  const teams = state.serverTeams.length>0 ? state.serverTeams : getAllTeams();
+  let csv='Rank,Team Name,Members,Round1 (50),Round2 (50),Penalty,Total (100),Time Taken (s),Status\n';
+  teams.slice().sort((a,b)=>b.score-a.score).forEach((t,i)=>{ csv+=`${i+1},"${(t.team||'').replace(/"/g,'""')}","${(t.members||'').replace(/"/g,'""')}",${t.r1||0},${t.r2||0},${t.penalty||0},${t.score},${t.time},${t.status||''}\n`; });
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='TRACE_X_Results.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function clearBoard(){
+  if(!confirm('Clear all scores? This action cannot be undone. / அனைத்து மதிப்பெண்களையும் நீக்கவா?')) return;
+  const token = prompt('Enter teacher/admin PIN to confirm:');
+  if(!token) return;
+  if(token!=='TRACE2024' && token!=='DELETE'){ alert('Invalid token'); return; }
+  localStorage.removeItem('tracex_all_teams');
+  state.serverTeams=[];
+  fetch('/api/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token})}).then(r=>{ if(!r.ok) console.log('Server clear not available, trying cloud'); }).catch(()=>{});
+  clearCloud();
+  updateBoard();
+  alert('Leaderboard cleared locally + cloud + server (if available)');
+}
+function restart(){
+  if(!confirm('Start a new team? The current team data will remain in the leaderboard. / புதிய அணியைத் தொடங்கவா?')) return;
+  clearInterval(state.timerInt);
+  state={view:'register',team:null,members:'',r1_answers:new Array(10).fill(null),r1_current:0,r2_case_index:0,r2_evidence:[[false,false,false],[false,false,false]],r2_q1:['',''],r2_q2:[null,null],r2_q3:[null,null],r2_q4:[null,null],startTime:null,timeLeft:R1_TIME,r1TimeUsed:0,r2StartTime:null,r1Submitted:false,r1Sent:false,r2Status:null,timerInt:null,submitted:false,serverTeams:state.serverTeams,revealedHints:{}};
+  try{ localStorage.removeItem('tracex_state_v6'); }catch{}
+  render();
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+setInterval(()=>{ if(document.getElementById('board').classList.contains('open')) updateBoard(); },5000);
+if(state.pendingSubmit){ const p=state.pendingSubmit; state.pendingSubmit=false; if(p==='r1') submitRound1(); else submitAll(); } else render();
+if(state.view==='waiting') pollR2Status();
+updateBoard();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43928cf89657f8b',t:'MTc5MDgzMzUwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

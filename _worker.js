@@ -36,6 +36,12 @@ async function f(r,e){
    }
    const b=await r.json().catch(()=>({}));
    if(r.method==="POST"){
+    if(b.mode==="admission"){
+      if(!["approved","rejected","pending"].includes(String(b.admissionStatus)))return R({error:"Invalid admission status"},400);
+      if(b.allPending)await e.DB.prepare("UPDATE teams SET admission_status=? WHERE admission_status='pending'").bind(b.admissionStatus).run();
+      else await e.DB.prepare("UPDATE teams SET admission_status=? WHERE team_key=?").bind(b.admissionStatus,k(b.team)).run();
+      return R({ok:true});
+    }
     if(!["approved","rejected","waiting"].includes(String(b.status)))return R({error:"Invalid status"},400);
     if(b.allWaiting)await e.DB.prepare("UPDATE teams SET status=? WHERE status='waiting'").bind(b.status).run();
     else await e.DB.prepare("UPDATE teams SET status=? WHERE team_key=?").bind(b.status,k(b.team)).run();

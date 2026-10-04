@@ -677,7 +677,7 @@ function doRegister(){
   if(t.length>30){ alert('Team name must be 30 characters or less'); return; }
   state.team=t; state.members=cl ? (m+' • '+cl).trim() : m;
   state.admissionStatus='pending'; state.view='admission_wait'; saveState(); render();
-  fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:t,members:m,className:cl})}).then(r=>r.json()).then(x=>{state.admissionStatus=x.status||'pending';saveState();render();}).catch(()=>{});
+  fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:t,members:m,className:cl})}).then(r=>r.json()).then(x=>{state.admissionStatus=x.status||'pending';state.gameVersion=x.gameVersion||null;saveState();render();}).catch(()=>{});
   // Also try cloud for Netlify
   (async()=>{
     try{
@@ -749,7 +749,7 @@ function submitRound1(){
 }
 function sendRound1(){
   const {r1Score}=computeScore();
-  return fetch('/api/round1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:state.team,members:state.members,r1Score,r1Time:state.r1TimeUsed,r1Answers:state.r1_answers})})
+  return fetch('/api/round1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:state.team,members:state.members,r1Score,r1Time:state.r1TimeUsed,r1Answers:state.r1_answers,gameVersion:state.gameVersion})})
     .then(r=>{ state.r1Sent=r.ok; saveState(); }).catch(()=>{});
 }
 let pollTimer=null;
@@ -817,24 +817,26 @@ async function loadAdmin(){
   const rows=await res.json();
   rows.sort((a,b)=> b.r1Score-a.r1Score || a.r1Time-b.r1Time);
   const badge=s=> s==='approved'?'<span style="color:var(--green);font-weight:800">✅ Selected</span>': s==='rejected'?'<span style="color:var(--red);font-weight:800">❌ Not selected</span>':'<span style="color:var(--yellow);font-weight:800">⏳ Waiting</span>';
+  const admissionBadge=s=>s==='approved'?'<span style="color:var(--green);font-weight:800">✅ Allowed</span>':s==='rejected'?'<span style="color:var(--red);font-weight:800">❌ Blocked</span>':'<span style="color:var(--yellow);font-weight:800">⏳ Pending</span>';
   const waiting=rows.filter(r=>r.status==='waiting').length;
   box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
       <div class="mono" style="font-size:13px;color:var(--muted)">${rows.length} teams finished Round 1 • ${waiting} waiting • ${rows.filter(r=>r.status==='approved').length} selected</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-small" onclick="adminSet(null,'approved')" ${waiting?'':'disabled'}>✅ Select all waiting</button>
+        <button class="btn btn-primary btn-small" onclick="adminAdmission(null,'approved')">✅ Allow all pending</button><button class="btn btn-ghost btn-small" onclick="adminAdmission(null,'rejected')">❌ Block all pending</button><button class="btn btn-primary btn-small" onclick="adminSet(null,'approved')" ${waiting?'':'disabled'}>✅ Select all waiting</button>
         <button class="btn btn-ghost btn-small" onclick="adminSet(null,'rejected')" ${waiting?'':'disabled'}>❌ Reject all waiting</button>
         <button class="btn btn-ghost btn-small" onclick="adminClear()">🗑️ Clear list</button><button class="btn btn-ghost btn-small" onclick="adminRestart()">🔄 Restart Game</button>
       </div>
     </div>
-    <div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Team</th><th>Round 1 (50)</th><th>R1 Time</th><th>Status</th><th>Action</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(r.team)}</b><br><span style="color:var(--muted);font-size:13px">${escapeHtml(r.members||'')}</span></td><td style="font-weight:700">${r.r1Score}</td><td>${Math.floor(r.r1Time/60)}m ${r.r1Time%60}s</td><td>${badge(r.status)}</td>
+    <div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Team</th><th>Round 1 (50)</th><th>R1 Time</th><th>Admission</th><th>R2 Status</th><th>Action</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${escapeHtml(r.team)}</b><br><span style="color:var(--muted);font-size:13px">${escapeHtml(r.members||'')}</span></td><td style="font-weight:700">${r.r1Score}</td><td>${Math.floor(r.r1Time/60)}m ${r.r1Time%60}s</td><td>${admissionBadge(r.admissionStatus)}</td><td>${badge(r.status)}</td>
       <td style="white-space:nowrap"><button class="btn btn-primary btn-small" onclick='adminSet(${JSON.stringify(r.team).replace(/'/g,"&#39;")},"approved")' ${r.status==='approved'?'disabled':''}>Select</button>
       <button class="btn btn-ghost btn-small" onclick='adminSet(${JSON.stringify(r.team).replace(/'/g,"&#39;")},"rejected")' ${r.status==='rejected'?'disabled':''}>Reject</button></td></tr>`).join('') || '<tr><td colspan=6 style="text-align:center;color:var(--muted);padding:18px">No team has finished Round 1 yet</td></tr>'}
     </tbody></table></div>
     <div style="margin-top:10px;font-size:12px;color:var(--muted)">Auto-refreshes every 5 seconds. Selected teams see a "Start Round 2" button on their screen.</div>`;
   if(document.getElementById('adminPanel').classList.contains('open')) adminTimer=setTimeout(loadAdmin,5000);
 }
+async function adminAdmission(team,admissionStatus){const body=team?{team,admissionStatus,mode:'admission'}:{allPending:true,admissionStatus,mode:'admission'};try{await adminFetch('POST',body);}catch{}loadAdmin();}
 async function adminSet(team,status){
   const body=team? {team,status} : {allWaiting:true,status};
   try{ await adminFetch('POST',body); }catch{}
@@ -896,7 +898,7 @@ function submitAll(){
   const notSelected=state.r2Status==='rejected';
   const entry={team:state.team,members:state.members,r1:r1Score,r2:r2Score,penalty:penalty,score:total,time:timeUsed,timestamp:Date.now(),status:notSelected?'Not selected for R2':'Completed'};
   saveTeam(entry);
-  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)}).catch(()=>{});
+  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...entry,gameVersion:state.gameVersion})}).catch(()=>{});
   saveToCloud(entry);
   state.view='result'; state.submitted=true; saveState(); render(); setTimeout(()=>toggleBoard(),600);
 }

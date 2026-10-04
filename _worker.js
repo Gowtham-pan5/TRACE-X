@@ -25,7 +25,8 @@ async function f(r,e){
   }
   if(p==="/api/round1"&&r.method==="GET"){
    const z=await e.DB.prepare("SELECT status,admission_status FROM teams WHERE team_key=?").bind(k(u.searchParams.get("team"))).first();
-   return R({status:z?.status||"unknown",admissionStatus:z?.admission_status||"unknown"});
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   return R({status:z?.status||"unknown",admissionStatus:z?.admission_status||"unknown",gameVersion:g?.version||1});
   }
   if(p==="/api/admin/teams"){
    if(!e.ADMIN_PIN)return R({error:"ADMIN_PIN is not configured"},503);

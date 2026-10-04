@@ -360,6 +360,7 @@ let state = {
   r2_q1:['',''], r2_q2:[null,null], r2_q3:[null,null], r2_q4:[null,null],
   startTime:null, timeLeft:R1_TIME,
   r1TimeUsed:0, r2StartTime:null, r1Submitted:false, r2Status:null,
+  admissionStatus:null, gameVersion:null,
   timerInt:null, submitted:false,
   serverTeams:[],
   revealedHints:{}
@@ -382,6 +383,39 @@ function loadState(){
   }catch{}
 }
 loadState();
+
+function forceRegisterAfterRestart(){
+  clearInterval(state.timerInt); state.timerInt=null;
+  clearTimeout(pollTimer);
+  state={
+    view:'register',team:null,members:'',
+    r1_answers:new Array(10).fill(null),r1_current:0,
+    r2_case_index:0,r2_evidence:[[false,false,false],[false,false,false]],
+    r2_q1:['',''],r2_q2:[null,null],r2_q3:[null,null],r2_q4:[null,null],
+    startTime:null,timeLeft:R1_TIME,r1TimeUsed:0,r2StartTime:null,
+    r1Submitted:false,r1Sent:false,r2Status:null,admissionStatus:null,gameVersion:null,
+    timerInt:null,submitted:false,serverTeams:[],revealedHints:{}
+  };
+  try{localStorage.removeItem('tracex_state_v6');}catch{}
+  render();
+  alert('The game was restarted by the admin. Please register your team again.');
+}
+async function checkGameVersion(){
+  try{
+    const res=await fetch('/api/game',{cache:'no-store'});
+    if(!res.ok) return;
+    const data=await res.json();
+    const serverVersion=Number(data.version||1);
+    if(state.gameVersion===null || state.gameVersion===undefined){
+      state.gameVersion=serverVersion;
+      saveState();
+      return;
+    }
+    if(Number(state.gameVersion)!==serverVersion){
+      forceRegisterAfterRestart();
+    }
+  }catch{}
+}
 
 function render(){
   const app=document.getElementById('app');
@@ -446,7 +480,7 @@ function registerView(){
 
 function admissionWaitView(){const st=state.admissionStatus;const body=st==='approved'?'<div style="font-size:24px;font-weight:700;color:var(--green)">✅ Approved! You may start Round 1.</div><button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="enterApprovedRound1()">🎯 Start Round 1 →</button>':st==='rejected'?'<div style="font-size:24px;font-weight:700;color:var(--red)">❌ Not approved</div><div style="margin-top:8px;color:var(--muted)">Please contact the event teacher/admin.</div>':'<div style="font-size:22px;font-weight:700">⏳ Waiting for teacher/admin approval</div><div style="margin-top:8px;color:var(--muted)">Your team is registered but cannot enter the game until approved.</div><div style="margin-top:12px;font-size:13px;color:var(--muted)">This page checks every 5 seconds.</div>';return '<div class="card" style="max-width:640px;margin:0 auto;text-align:center"><div class="card-header" style="justify-content:center">🔐 Event Admission</div><div>Team: <b>'+escapeHtml(state.team)+'</b></div><div style="margin-top:16px">'+body+'</div></div>';}
 function enterApprovedRound1(){if(state.admissionStatus==='approved'){state.view='rules';saveState();render();}}
-async function pollAdmission(){if(state.view!=='admission_wait')return;try{const r=await fetch('/api/round1?team='+encodeURIComponent(state.team));const x=await r.json();if(x.admissionStatus)state.admissionStatus=x.admissionStatus;saveState();render();}catch{}if(state.view==='admission_wait')setTimeout(pollAdmission,5000);}
+async function pollAdmission(){if(state.view!=='admission_wait')return;try{const r=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});const x=await r.json();if(x.gameVersion && Number(state.gameVersion)!==Number(x.gameVersion)){forceRegisterAfterRestart();return;}if(x.admissionStatus)state.admissionStatus=x.admissionStatus;saveState();render();}catch{}if(state.view==='admission_wait')setTimeout(pollAdmission,5000);}
 function rulesView(){
   return `
   <div class="card" style="max-width:720px;margin:0 auto">
@@ -750,18 +784,20 @@ function submitRound1(){
 function sendRound1(){
   const {r1Score}=computeScore();
   return fetch('/api/round1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:state.team,members:state.members,r1Score,r1Time:state.r1TimeUsed,r1Answers:state.r1_answers,gameVersion:state.gameVersion})})
-    .then(r=>{ state.r1Sent=r.ok; saveState(); }).catch(()=>{});
+    .then(async r=>{ const data=await r.json().catch(()=>({})); if(r.status===409 && data.code==='GAME_RESTARTED'){forceRegisterAfterRestart();return;} state.r1Sent=r.ok; saveState(); }).catch(()=>{});
 }
 let pollTimer=null;
 async function pollR2Status(){
   clearTimeout(pollTimer);
   if(state.view!=='waiting') return;
   if(!state.r1Sent) await sendRound1();
+  if(state.view!=='waiting') return;
   try{
-    const res=await fetch('/api/round1?team='+encodeURIComponent(state.team));
+    const res=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});
     if(res.ok){
-      const {status}=await res.json();
-      if(status!==state.r2Status && state.view==='waiting'){ state.r2Status=status; saveState(); render(); }
+      const data=await res.json();
+      if(data.gameVersion && Number(state.gameVersion)!==Number(data.gameVersion)){forceRegisterAfterRestart();return;}
+      if(data.status!==state.r2Status && state.view==='waiting'){ state.r2Status=data.status; saveState(); render(); }
     }
   }catch{}
   if(state.view==='waiting' && state.r2Status!=='rejected') pollTimer=setTimeout(pollR2Status,5000);
@@ -898,7 +934,7 @@ function submitAll(){
   const notSelected=state.r2Status==='rejected';
   const entry={team:state.team,members:state.members,r1:r1Score,r2:r2Score,penalty:penalty,score:total,time:timeUsed,timestamp:Date.now(),status:notSelected?'Not selected for R2':'Completed'};
   saveTeam(entry);
-  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...entry,gameVersion:state.gameVersion})}).catch(()=>{});
+  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...entry,gameVersion:state.gameVersion})}).then(async r=>{const data=await r.json().catch(()=>({}));if(r.status===409&&data.code==='GAME_RESTARTED')forceRegisterAfterRestart();}).catch(()=>{});
   saveToCloud(entry);
   state.view='result'; state.submitted=true; saveState(); render(); setTimeout(()=>toggleBoard(),600);
 }
@@ -968,7 +1004,7 @@ function clearBoard(){
   if(!confirm('Clear all scores? This action cannot be undone. / அனைத்து மதிப்பெண்களையும் நீக்கவா?')) return;
   const token = prompt('Enter teacher/admin PIN to confirm:');
   if(!token) return;
-  if(token!=='TRACE2024' && token!=='DELETE'){ alert('Invalid token'); return; }
+  if(token!==adminPin){ alert('Invalid token'); return; }
   localStorage.removeItem('tracex_all_teams');
   state.serverTeams=[];
   fetch('/api/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token})}).then(r=>{ if(!r.ok) console.log('Server clear not available, trying cloud'); }).catch(()=>{});
@@ -979,15 +1015,18 @@ function clearBoard(){
 function restart(){
   if(!confirm('Start a new team? The current team data will remain in the leaderboard. / புதிய அணியைத் தொடங்கவா?')) return;
   clearInterval(state.timerInt);
-  state={view:'register',team:null,members:'',r1_answers:new Array(10).fill(null),r1_current:0,r2_case_index:0,r2_evidence:[[false,false,false],[false,false,false]],r2_q1:['',''],r2_q2:[null,null],r2_q3:[null,null],r2_q4:[null,null],startTime:null,timeLeft:R1_TIME,r1TimeUsed:0,r2StartTime:null,r1Submitted:false,r1Sent:false,r2Status:null,timerInt:null,submitted:false,serverTeams:state.serverTeams,revealedHints:{}};
+  state={view:'register',team:null,members:'',r1_answers:new Array(10).fill(null),r1_current:0,r2_case_index:0,r2_evidence:[[false,false,false],[false,false,false]],r2_q1:['',''],r2_q2:[null,null],r2_q3:[null,null],r2_q4:[null,null],startTime:null,timeLeft:R1_TIME,r1TimeUsed:0,r2StartTime:null,r1Submitted:false,r1Sent:false,r2Status:null,admissionStatus:null,gameVersion:null,timerInt:null,submitted:false,serverTeams:state.serverTeams,revealedHints:{}};
   try{ localStorage.removeItem('tracex_state_v6'); }catch{}
   render();
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 setInterval(()=>{ if(document.getElementById('board').classList.contains('open')) updateBoard(); },5000);
+setInterval(checkGameVersion,5000);
 if(state.pendingSubmit){ const p=state.pendingSubmit; state.pendingSubmit=false; if(p==='r1') submitRound1(); else submitAll(); } else render();
 if(state.view==='waiting') pollR2Status();
+if(state.view==='admission_wait') pollAdmission();
 updateBoard();
+checkGameVersion();
 </script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43928cf89657f8b',t:'MTc5MDgzMzUwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

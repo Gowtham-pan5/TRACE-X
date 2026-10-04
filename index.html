@@ -478,7 +478,13 @@ function registerView(){
   </div>`;
 }
 
-function admissionWaitView(){const st=state.admissionStatus;const body=st==='approved'?'<div style="font-size:24px;font-weight:700;color:var(--green)">✅ Approved! You may start Round 1.</div><button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="enterApprovedRound1()">🎯 Start Round 1 →</button>':st==='rejected'?'<div style="font-size:24px;font-weight:700;color:var(--red)">❌ Not approved</div><div style="margin-top:8px;color:var(--muted)">Please contact the event teacher/admin.</div>':'<div style="font-size:22px;font-weight:700">⏳ Waiting for teacher/admin approval</div><div style="margin-top:8px;color:var(--muted)">Your team is registered but cannot enter the game until approved.</div><div style="margin-top:12px;font-size:13px;color:var(--muted)">This page checks every 5 seconds.</div>';return '<div class="card" style="max-width:640px;margin:0 auto;text-align:center"><div class="card-header" style="justify-content:center">🔐 Event Admission</div><div>Team: <b>'+escapeHtml(state.team)+'</b></div><div style="margin-top:16px">'+body+'</div></div>';}
+function admissionWaitView(){
+  const st=state.admissionStatus;
+  const body=st==='rejected'
+    ? '<div style="font-size:24px;font-weight:700;color:var(--red)">❌ Not approved</div><div style="margin-top:8px;color:var(--muted)">Please contact the event teacher/admin.</div>'
+    : '<div style="font-size:22px;font-weight:700">⏳ Waiting for teacher/admin approval</div><div style="margin-top:8px;color:var(--muted)">Your team is registered. Round 1 will start automatically when the teacher/admin clicks Allow.</div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Checking approval every second…</div>';
+  return '<div class="card" style="max-width:640px;margin:0 auto;text-align:center"><div class="card-header" style="justify-content:center">🔐 Event Admission</div><div>Team: <b>'+escapeHtml(state.team)+'</b></div><div style="margin-top:16px">'+body+'</div></div>';
+}
 async function enterApprovedRound1(){
   try{
     const r=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});
@@ -492,7 +498,32 @@ async function enterApprovedRound1(){
     alert('Cannot verify approval from the server. Please try again.');
   }
 }
-async function pollAdmission(){if(state.view!=='admission_wait')return;try{const r=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});const x=await r.json();if(x.gameVersion && Number(state.gameVersion)!==Number(x.gameVersion)){forceRegisterAfterRestart();return;}if(x.admissionStatus)state.admissionStatus=x.admissionStatus;saveState();render();}catch{}if(state.view==='admission_wait')setTimeout(pollAdmission,5000);}
+async function pollAdmission(){
+  if(state.view!=='admission_wait')return;
+  try{
+    const r=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});
+    const x=await r.json().catch(()=>({}));
+    if(x.gameVersion && state.gameVersion!==null && Number(state.gameVersion)!==Number(x.gameVersion)){forceRegisterAfterRestart();return;}
+    if(x.gameVersion) state.gameVersion=Number(x.gameVersion);
+    if(x.admissionStatus) state.admissionStatus=x.admissionStatus;
+    if(state.admissionStatus==='approved'){
+      state.view='r1';
+      state.r1_current=0;
+      state.r1_answers=new Array(10).fill(null);
+      state.startTime=Date.now();
+      state.timeLeft=R1_TIME;
+      state.r1Submitted=false;
+      state.r1Sent=false;
+      saveState();
+      render();
+      startTimer();
+      return;
+    }
+    saveState();
+    render();
+  }catch{}
+  if(state.view==='admission_wait')setTimeout(pollAdmission,1000);
+}
 function rulesView(){
   return `
   <div class="card" style="max-width:720px;margin:0 auto">
@@ -736,23 +767,8 @@ function doRegister(){
   })();
 }
 async function startR1(){
-  try{
-    const r=await fetch('/api/round1?team='+encodeURIComponent(state.team),{cache:'no-store'});
-    const x=await r.json().catch(()=>({}));
-    if(x.gameVersion && state.gameVersion!==null && Number(state.gameVersion)!==Number(x.gameVersion)){forceRegisterAfterRestart();return;}
-    state.admissionStatus=x.admissionStatus||state.admissionStatus;
-    if(x.gameVersion) state.gameVersion=Number(x.gameVersion);
-    if(state.admissionStatus!=='approved'){
-      saveState();render();alert('Admin has not allowed this team yet. Please wait for approval.');return;
-    }
-    state.view='r1'; state.r1_current=0; state.r1_answers=new Array(10).fill(null);
-    if(!state.startTime){ state.startTime=Date.now(); state.timeLeft=R1_TIME; startTimer(); }
-    saveState(); render();
-    document.getElementById('footerNav').style.display='flex';
-    document.getElementById('totIdx').textContent='10';
-  }catch{
-    alert('Cannot connect to the game server. Please try again.');
-  }
+  // Kept for compatibility with any old cached page; approval is now automatic.
+  return;
 }
 function pickR1(i){ state.r1_answers[state.r1_current]=i; saveState(); render(); }
 function pickR2(q,i){ const idx=state.r2_case_index; if(q==='q2') state.r2_q2[idx]=i; if(q==='q3') state.r2_q3[idx]=i; if(q==='q4') state.r2_q4[idx]=i; saveState(); render(); }

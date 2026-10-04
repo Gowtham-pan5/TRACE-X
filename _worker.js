@@ -6,27 +6,30 @@ async function f(r,e){
  if(!e.DB)return R({error:"D1 unavailable"},503);
  try{
   if(p==="/api/register"&&r.method==="POST"){
-   const b=await r.json(),t=String(b.team||"").trim(),m=String(b.members||"");
+   const b=await r.json(),t=String(b.team||"").trim(),m=String(b.members||"").trim(),cl=String(b.className||"").trim();
    if(!t)return R({error:"Team name required"},400);
-   await e.DB.prepare("INSERT INTO teams(team_key,team,members,status) VALUES(?,?,?,?) ON CONFLICT(team_key) DO UPDATE SET team=excluded.team,members=excluded.members,updated_at=CURRENT_TIMESTAMP").bind(k(t),t,m,"waiting").run();
-   return R({ok:true});
+   await e.DB.prepare("INSERT INTO teams(team_key,team,members,status,admission_status) VALUES(?,?,?,?,?) ON CONFLICT(team_key) DO UPDATE SET team=excluded.team,members=excluded.members,status='waiting',admission_status='pending',updated_at=CURRENT_TIMESTAMP").bind(k(t),t,[m,cl].filter(Boolean).join(" • "),"waiting","pending").run();
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   return R({ok:true,status:"pending",gameVersion:g?.version||1});
   }
   if(p==="/api/round1"&&r.method==="POST"){
    const b=await r.json(),t=String(b.team||"").trim(),m=String(b.members||"");
    const s=Math.max(0,Math.min(50,Number(b.r1Score)||0)),tm=Math.max(0,Number(b.r1Time)||0),a=JSON.stringify(b.r1Answers||[]);
    if(!t)return R({error:"Team name required"},400);
-   await e.DB.prepare("INSERT INTO teams(team_key,team,members,r1_score,r1_time,r1_answers,status) VALUES(?,?,?,?,?,?,?) ON CONFLICT(team_key) DO UPDATE SET members=excluded.members,r1_score=excluded.r1_score,r1_time=excluded.r1_time,r1_answers=excluded.r1_answers,status='waiting',updated_at=CURRENT_TIMESTAMP").bind(k(t),t,m,s,tm,a,"waiting").run();
+   const q=await e.DB.prepare("SELECT admission_status FROM teams WHERE team_key=?").bind(k(t)).first();
+   if(q?.admission_status!=="approved")return R({error:"Team is not approved to play",status:q?.admission_status||"unknown"},403);
+   await e.DB.prepare("UPDATE teams SET members=?,r1_score=?,r1_time=?,r1_answers=?,status='waiting',updated_at=CURRENT_TIMESTAMP WHERE team_key=?").bind(m,s,tm,a,k(t)).run();
    return R({status:"waiting"});
   }
   if(p==="/api/round1"&&r.method==="GET"){
-   const z=await e.DB.prepare("SELECT status FROM teams WHERE team_key=?").bind(k(u.searchParams.get("team"))).first();
-   return R({status:z?.status||"unknown"});
+   const z=await e.DB.prepare("SELECT status,admission_status FROM teams WHERE team_key=?").bind(k(u.searchParams.get("team"))).first();
+   return R({status:z?.status||"unknown",admissionStatus:z?.admission_status||"unknown"});
   }
   if(p==="/api/admin/teams"){
    if(!e.ADMIN_PIN)return R({error:"ADMIN_PIN is not configured"},503);
    if(r.headers.get("x-admin-pin")!==e.ADMIN_PIN)return R({error:"Wrong PIN"},401);
    if(r.method==="GET"){
-    const z=await e.DB.prepare("SELECT id,team_key,team,members,r1_score AS r1Score,r1_time AS r1Time,r1_answers AS r1Answers,status FROM teams ORDER BY r1_score DESC,r1_time ASC").all();
+    const z=await e.DB.prepare("SELECT id,team_key,team,members,r1_score AS r1Score,r1_time AS r1Time,r1_answers AS r1Answers,status,admission_status AS admissionStatus FROM teams ORDER BY r1_score DESC,r1_time ASC").all();
     return R(z.results||[]);
    }
    const b=await r.json().catch(()=>({}));
@@ -47,6 +50,18 @@ async function f(r,e){
   if(p==="/api/scoreboard"&&r.method==="GET"){
    const z=await e.DB.prepare("SELECT team,members,r1_score AS r1,r2,penalty,score,time,status,timestamp FROM teams ORDER BY score DESC,time ASC").all();
    return R(z.results||[]);
+  }
+  if(p==="/api/game"&&r.method==="GET"){
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   return R({version:g?.version||1});
+  }
+  if(p==="/api/admin/restart"&&r.method==="POST"){
+   if(!e.ADMIN_PIN)return R({error:"ADMIN_PIN is not configured"},503);
+   if(r.headers.get("x-admin-pin")!==e.ADMIN_PIN)return R({error:"Wrong PIN"},401);
+   await e.DB.prepare("DELETE FROM teams").run();
+   await e.DB.prepare("UPDATE game_control SET version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=1").run();
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   return R({ok:true,version:g?.version||1});
   }
   if(p==="/api/clear"&&r.method==="POST"){
    const b=await r.json();

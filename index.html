@@ -386,6 +386,7 @@ loadState();
 function render(){
   const app=document.getElementById('app');
   if(state.view==='register') app.innerHTML=registerView();
+  else if(state.view==='admission_wait') app.innerHTML=admissionWaitView();
   else if(state.view==='rules') app.innerHTML=rulesView();
   else if(state.view==='r1') app.innerHTML=r1View();
   else if(state.view==='r1_review') app.innerHTML=r1ReviewView();
@@ -443,6 +444,9 @@ function registerView(){
   </div>`;
 }
 
+function admissionWaitView(){const st=state.admissionStatus;const body=st==='approved'?'<div style="font-size:24px;font-weight:700;color:var(--green)">✅ Approved! You may start Round 1.</div><button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="enterApprovedRound1()">🎯 Start Round 1 →</button>':st==='rejected'?'<div style="font-size:24px;font-weight:700;color:var(--red)">❌ Not approved</div><div style="margin-top:8px;color:var(--muted)">Please contact the event teacher/admin.</div>':'<div style="font-size:22px;font-weight:700">⏳ Waiting for teacher/admin approval</div><div style="margin-top:8px;color:var(--muted)">Your team is registered but cannot enter the game until approved.</div><div style="margin-top:12px;font-size:13px;color:var(--muted)">This page checks every 5 seconds.</div>';return '<div class="card" style="max-width:640px;margin:0 auto;text-align:center"><div class="card-header" style="justify-content:center">🔐 Event Admission</div><div>Team: <b>'+escapeHtml(state.team)+'</b></div><div style="margin-top:16px">'+body+'</div></div>';}
+function enterApprovedRound1(){if(state.admissionStatus==='approved'){state.view='rules';saveState();render();}}
+async function pollAdmission(){if(state.view!=='admission_wait')return;try{const r=await fetch('/api/round1?team='+encodeURIComponent(state.team));const x=await r.json();if(x.admissionStatus)state.admissionStatus=x.admissionStatus;saveState();render();}catch{}if(state.view==='admission_wait')setTimeout(pollAdmission,5000);}
 function rulesView(){
   return `
   <div class="card" style="max-width:720px;margin:0 auto">
@@ -667,12 +671,13 @@ function resultView(){
 function doRegister(){
   const t=document.getElementById('teamInput').value.trim();
   const m=document.getElementById('memberInput').value.trim();
+  const cl=document.getElementById('classInput')?.value.trim()||'';
   if(!t){ alert('Please enter your team name / அணி பெயரை உள்ளிடவும்'); return; }
   if(t.length<2){ alert('Team name must be at least 2 characters'); return; }
   if(t.length>30){ alert('Team name must be 30 characters or less'); return; }
-  state.team=t; state.members=m;
-  state.view='rules'; saveState(); render();
-  fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:t,members:m})}).catch(()=>{});
+  state.team=t; state.members=cl ? (m+' • '+cl).trim() : m;
+  state.admissionStatus='pending'; state.view='admission_wait'; saveState(); render();
+  fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team:t,members:m,className:cl})}).then(r=>r.json()).then(x=>{state.admissionStatus=x.status||'pending';saveState();render();}).catch(()=>{});
   // Also try cloud for Netlify
   (async()=>{
     try{
@@ -685,6 +690,7 @@ function doRegister(){
   })();
 }
 function startR1(){
+  if(state.admissionStatus!=='approved'){alert('Your team must be approved by the admin first.');return;}
   state.view='r1'; state.r1_current=0; state.r1_answers=new Array(10).fill(null);
   if(!state.startTime){ state.startTime=Date.now(); state.timeLeft=R1_TIME; startTimer(); }
   saveState(); render();
@@ -818,7 +824,7 @@ async function loadAdmin(){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-primary btn-small" onclick="adminSet(null,'approved')" ${waiting?'':'disabled'}>✅ Select all waiting</button>
         <button class="btn btn-ghost btn-small" onclick="adminSet(null,'rejected')" ${waiting?'':'disabled'}>❌ Reject all waiting</button>
-        <button class="btn btn-ghost btn-small" onclick="adminClear()">🗑️ Clear list</button>
+        <button class="btn btn-ghost btn-small" onclick="adminClear()">🗑️ Clear list</button><button class="btn btn-ghost btn-small" onclick="adminRestart()">🔄 Restart Game</button>
       </div>
     </div>
     <div style="overflow:auto"><table class="table"><thead><tr><th>#</th><th>Team</th><th>Round 1 (50)</th><th>R1 Time</th><th>Status</th><th>Action</th></tr></thead><tbody>
@@ -955,6 +961,7 @@ function exportCSV(){
   teams.slice().sort((a,b)=>b.score-a.score).forEach((t,i)=>{ csv+=`${i+1},"${(t.team||'').replace(/"/g,'""')}","${(t.members||'').replace(/"/g,'""')}",${t.r1||0},${t.r2||0},${t.penalty||0},${t.score},${t.time},${t.status||''}\n`; });
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='TRACE_X_Results.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+function adminRestart(){if(!confirm('Restart the entire event? This clears all teams, scores, approvals and Round 2 states for everyone.'))return;fetch('/api/admin/restart',{method:'POST',headers:{'x-admin-pin':adminPin||''}}).then(async r=>{if(r.status===401){adminPin=null;alert('Wrong PIN');return;}if(!r.ok){const e=await r.json().catch(()=>({}));alert(e.error||'Restart failed');return;}alert('Game restarted. All players must register again.');loadAdmin();});}
 function clearBoard(){
   if(!confirm('Clear all scores? This action cannot be undone. / அனைத்து மதிப்பெண்களையும் நீக்கவா?')) return;
   const token = prompt('Enter teacher/admin PIN to confirm:');

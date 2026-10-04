@@ -50,7 +50,7 @@ async function f(r,e){
   }
   if(p==="/api/clear"&&r.method==="POST"){
    const b=await r.json();
-   if(b.token!=="TRACE2024"&&b.token!=="DELETE")return R({error:"Invalid token"},401);
+   if(String(b.token??"")!==String(e.ADMIN_PIN??""))return R({error:"Invalid token"},401);
    await e.DB.prepare("DELETE FROM teams").run();return R({ok:true});
   }
   return R({error:"Not found"},404);

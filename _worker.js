@@ -16,6 +16,8 @@ async function f(r,e){
    const b=await r.json(),t=String(b.team||"").trim(),m=String(b.members||"");
    const s=Math.max(0,Math.min(50,Number(b.r1Score)||0)),tm=Math.max(0,Number(b.r1Time)||0),a=JSON.stringify(b.r1Answers||[]);
    if(!t)return R({error:"Team name required"},400);
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   if(Number(b.gameVersion)!==Number(g?.version||1))return R({error:"Game was restarted. Please register again.",code:"GAME_RESTARTED"},409);
    const q=await e.DB.prepare("SELECT admission_status FROM teams WHERE team_key=?").bind(k(t)).first();
    if(q?.admission_status!=="approved")return R({error:"Team is not approved to play",status:q?.admission_status||"unknown"},403);
    await e.DB.prepare("UPDATE teams SET members=?,r1_score=?,r1_time=?,r1_answers=?,status='waiting',updated_at=CURRENT_TIMESTAMP WHERE team_key=?").bind(m,s,tm,a,k(t)).run();
@@ -44,6 +46,8 @@ async function f(r,e){
   if(p==="/api/submit"&&r.method==="POST"){
    const b=await r.json(),t=String(b.team||"").trim();
    if(!t)return R({error:"Team name required"},400);
+   const g=await e.DB.prepare("SELECT version FROM game_control WHERE id=1").first();
+   if(Number(b.gameVersion)!==Number(g?.version||1))return R({error:"Game was restarted. Please register again.",code:"GAME_RESTARTED"},409);
    await e.DB.prepare("UPDATE teams SET r2=?,penalty=?,score=?,time=?,status=?,timestamp=?,updated_at=CURRENT_TIMESTAMP WHERE team_key=?").bind(Number(b.r2)||0,Number(b.penalty)||0,Number(b.score)||0,Number(b.time)||0,b.status||"Completed",Number(b.timestamp)||Date.now(),k(t)).run();
    return R({ok:true});
   }

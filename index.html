@@ -440,7 +440,10 @@ function registerView(){
       <span class="hero-kbd">Round 1: 10 Easy Stories • Round 2: 2 Investigations with Hidden Clues</span>
     </div>
     <h1 class="hero-title"><span class="wiggle">🔎</span> TRACE / X</h1>
-    <div style="margin-top:10px;color:var(--muted);font-size:18px;font-weight:700;max-width:640px;line-height:1.6;margin-top:22px">Two rounds, one timer. Easy English + Tamil. Find hidden clues in evidence!<br><span class="tamil">எளிய ஆங்கிலம் + தமிழ். ஆதாரத்தில் மறைக்கப்பட்ட குறிப்பைக் கண்டுபிடிக்கவும்.</span></div>
+    <div style="margin-top:10px;color:var(--muted);font-size:18px;font-weight:700;max-width:760px;line-height:1.65;margin-top:22px">
+      An online cybersecurity case-solving challenge for school students. Teams solve simple cyber-safety stories, identify the safest action, and then move to deeper investigation cases with evidence and hidden clues.<br>
+      <span class="tamil">பள்ளி மாணவர்களுக்கான ஆன்லைன் சைபர் பாதுகாப்பு சவால். முதலில் எளிய சைபர் பாதுகாப்பு கேள்விகள், பின்னர் ஆதாரம் மற்றும் மறைக்கப்பட்ட குறிப்புகளுடன் விசாரணை வழக்குகள்.</span>
+    </div>
   </div>
   <div class="grid-main">
     <div class="card">
@@ -454,23 +457,29 @@ function registerView(){
     </div>
     <div>
       <div class="card">
-        <div class="card-header">🗺️ Challenge Structure - Easy Words</div>
-        <div style="font-size:13.5px;line-height:1.7">
-          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Round 1</span><span>10 Easy Q × 5 pts = 50 pts</span></div>
-          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Round 2</span><span>2 Cases × 25 pts = 50 pts</span></div>
-          <div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--muted);line-height:1.6">
-            Evidence penalty: -2, -3, -5 if you open<br>
-            But evidence has <span style="color:var(--green)">hidden clues inside</span> - click to see!<br>
-            Q1: One easy word (fake, cheating...) 5 pts<br>
-            Q2: Choose correct 5 pts<br>
-            Q3: Choose correct 5 pts<br>
-            Q4: Put steps in correct order 10 pts
+        <div class="card-header">🗺️ Challenge Description & Rules</div>
+        <div style="font-size:13.5px;line-height:1.75">
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">🔎 Two-round cybersecurity investigation</div>
+          <div style="color:var(--muted);margin-bottom:10px">
+            This is a school-level online cybersecurity challenge. Teams first solve 10 easy cyber-safety questions and then, if selected by the admin, solve 2 deeper investigation cases.
           </div>
-          <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="color:var(--muted)">Total Time</span><span>15 min Round 1 + 15 min Round 2</span></div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>1. Team registration</b><br>Enter the team name, members and class. Each team waits for admin approval.</div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>2. Round 1 — 15 minutes</b><br>10 easy cyber-safety questions × 5 points = 50 points. Round 1 starts automatically when the admin clicks <b>Allow</b>.</div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>3. Round 2 — 15 minutes</b><br>After Round 1, the admin selects the teams that continue. Only selected teams can enter Round 2.</div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>4. Evidence & penalties</b><br>Round 2 has evidence cards. Opening a card may give a hidden clue but can cause a penalty of <b>-2, -3 or -5</b>.</div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>5. Scoring</b><br>Round 1 = 50 points + Round 2 = 50 points − evidence penalties = final score.</div>
+          <div style="padding:7px 0;border-bottom:1px solid var(--border)"><b>6. Fair play</b><br>Do not share answers with other teams. Do not attempt to bypass the admin approval system. Admin/judge decisions are final.</div>
+          <div style="padding:7px 0"><b>7. Restart</b><br>If the admin restarts the game, all teams, approvals and scores are cleared and every team must register again.</div>
         </div>
       </div>
-      <div class="card" style="margin-top:12px;background:var(--bg)"><div class="card-header">✅ Mission checklist</div>
-        <div style="font-size:16px;line-height:1.9">🔎 10 quick cases are ready<br>🕵️ 2 big investigations are ready<br>🔒 Evidence vault is locked (hidden clues inside)<br><span style="color:var(--green);font-weight:800">🟢 All set! Enter your team name to begin.</span>
+      <div class="card" style="margin-top:12px;background:var(--bg)"><div class="card-header">✅ Before You Begin</div>
+        <div style="font-size:15.5px;line-height:1.9">
+          👥 Register your team details<br>
+          🔐 Wait for admin approval<br>
+          🎯 Round 1 starts automatically after Allow<br>
+          🕵️ Round 2 is available only to teams selected by admin<br>
+          ⏱️ 15 minutes per round<br>
+          🏆 Final ranking uses score first, then time
         </div>
       </div>
       <button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="toggleBoard()">🏆 View Leaderboard</button>
@@ -527,9 +536,9 @@ async function pollAdmission(){
 function rulesView(){
   return `
   <div class="card" style="max-width:720px;margin:0 auto">
-    <div class="card-header">🗒️ Mission Briefing - Easy Rules</div>
+    <div class="card-header">🗒️ Event Rules & Mission Briefing</div>
     <div style="font-size:26px;font-weight:600">🕵️ Welcome, ${escapeHtml(state.team)}!</div>
-    <div style="color:var(--muted);font-size:13px;margin-top:6px">Round 1 has 15 minutes. After Round 1 the admin selects the teams who go to Round 2. Round 2 has its own 15 minutes. / Round 1 முடிந்ததும் தேர்வானவர்கள் மட்டும் Round 2 செல்லலாம்.</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:6px">Round 1 starts automatically after admin approval. Round 2 is available only to teams selected after Round 1. / நிர்வாகி அனுமதி அளித்தவுடன் Round 1 தானாக தொடங்கும். Round 1 முடிந்ததும் தேர்ந்தெடுக்கப்படும் அணிகள் மட்டும் Round 2 செல்லலாம்.</div>
     <div style="height:1px;background:var(--border);margin:16px 0"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="scenario-box"><div class="label">Round 1 - Easy Stories</div>10 very easy stories<br>Simple English, simple Tamil<br>5 points each<br>Time: 15 minutes<br><br><span style="color:var(--muted);font-size:13px">Only easy words: fake, real, trick, cheating.</span></div>

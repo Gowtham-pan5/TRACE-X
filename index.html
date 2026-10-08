@@ -450,7 +450,7 @@ function registerView(){
       <div class="card-header">🧑‍🤝‍🧑 Team Registration</div>
       <div style="font-size:20px;font-weight:600;letter-spacing:-0.02em">Enter your team details</div>
       <div style="color:var(--muted);font-size:13px;margin-top:4px">One team per system • Please use English for team name (max 30 chars)</div>
-      <div class="field"><label>Team Name * / அணி பெயர் *</label><input id="teamInput" class="input" placeholder="Ex: 7A Cyber Squad" value="${escapeHtml(state.team||'')}" maxlength="30"></div><div class="field"><label>School Name / பள்ளி பெயர்</label><input id="schoolInput" class="input" placeholder="Ex: ABC Higher Secondary School" value="\${escapeHtml(state.schoolName||'')}" maxlength="100"></div>
+      <div class="field"><label>Team Name * / அணி பெயர் *</label><input id="teamInput" class="input" placeholder="Ex: 7A Cyber Squad" value="${escapeHtml(state.team||'')}" maxlength="30"></div><div class="field"><label>School Name / பள்ளி பெயர்</label><input id="schoolInput" class="input" placeholder="Ex: ABC Higher Secondary School"  maxlength="100"></div>
       <div class="field"><label>Members / உறுப்பினர்கள்</label><input id="memberInput" class="input" placeholder="Arun, Priya" value="${escapeHtml(state.members||'')}" maxlength="100"></div>
       <div class="field"><label>Class / வகுப்பு</label><input id="classInput" class="input" placeholder="7th Std" maxlength="20"></div>
       <button class="btn btn-primary" style="width:100%;margin-top:18px" onclick="doRegister()">🚀 Start Challenge / தொடங்கு</button>

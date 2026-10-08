@@ -689,7 +689,11 @@ function computeScore(){
     const pick=(opts,v,key)=> v!==null&&v!==undefined ? `${String.fromCharCode(65+v)}) ${opts[v][key]}` : 'Not answered';
     const q4right=r2.q4.sequences.findIndex(x=>x.correct);
     const cn=`R2 Case ${idx+1}`;
-    history.push({round:2, q:`${cn} Q1: One word`, your:q1Val.trim()||'Not answered', right:'fake / scam / போலி / ஏமாற்று', ok:q1ok, pts:q1ok?r2.q1.points:0, max:r2.q1.points});
+    const q1Display=(r2.q1.opts||[]).find(o=>o.value===q1Val)?.en || q1Val.trim() || 'Not answered';
+    const q1DisplayTa=(r2.q1.opts||[]).find(o=>o.value===q1Val)?.ta || '';
+    const q1Your=q1Display+(q1DisplayTa?` / ${q1DisplayTa}`:'');
+    const q1Right=(r2.q1.opts||[]).filter(o=>Array.isArray(r2.q1.answer)&&r2.q1.answer.includes(o.value)).map(o=>`${o.en} / ${o.ta}`).join(' OR ');
+    history.push({round:2, q:`${cn} Q1: ${r2.q1.en.replace(/\(5 pts\)\s*/i,'')}`, your:q1Your, right:q1Right||'Not specified', ok:q1ok, pts:q1ok?r2.q1.points:0, max:r2.q1.points});
     history.push({round:2, q:`${cn} Q2: First mistake`, your:pick(r2.q2.opts,state.r2_q2[idx],'en'), right:pick(r2.q2.opts,r2.q2.correct,'en'), ok:q2ok, pts:q2ok?r2.q2.points:0, max:r2.q2.points});
     history.push({round:2, q:`${cn} Q3: What to do`, your:pick(r2.q3.opts,state.r2_q3[idx],'en'), right:pick(r2.q3.opts,r2.q3.correct,'en'), ok:q3ok, pts:q3ok?r2.q3.points:0, max:r2.q3.points});
     history.push({round:2, q:`${cn} Q4: Safe steps`, your:pick(r2.q4.sequences,state.r2_q4[idx],'label_en'), right:pick(r2.q4.sequences,q4right,'label_en'), ok:q4ok, pts:q4ok?r2.q4.points:0, max:r2.q4.points});
@@ -710,7 +714,7 @@ function resultView(){
     <div style="background:var(--bg);border:2px solid var(--ink);border-radius:14px;padding:12px;margin:8px 0">
       <div style="font-weight:700;font-size:14px">${escapeHtml(d.title)}: ${d.score}/${d.max} pts</div>
       <div style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6">
-        Q1 Easy word: ${d.q1ok?'✅ 5':'❌ 0'}<br>
+        Q1: ${d.q1ok?'✅ 5':'❌ 0'}<br>
         Q2: ${d.q2ok?'✅ 5':'❌ 0'} (Correct: ${String.fromCharCode(65+ROUND2_CASES[i].q2.correct)})<br>
         Q3: ${d.q3ok?'✅ 5':'❌ 0'} (Correct: ${String.fromCharCode(65+ROUND2_CASES[i].q3.correct)})<br>
         Q4 Steps: ${d.q4ok?'✅ 10':'❌ 0'} (Correct: Option B)

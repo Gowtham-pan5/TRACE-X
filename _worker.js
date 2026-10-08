@@ -32,7 +32,7 @@ async function f(r,e){
    if(!e.ADMIN_PIN)return R({error:"ADMIN_PIN is not configured"},503);
    if(r.headers.get("x-admin-pin")!==e.ADMIN_PIN)return R({error:"Wrong PIN"},401);
    if(r.method==="GET"){
-    const z=await e.DB.prepare("SELECT id,team_key,team,members,r1_score AS r1Score,r1_time AS r1Time,CASE WHEN time>r1_time THEN time-r1_time ELSE 0 END AS r2Time,time AS totalTime,r1_answers AS r1Answers,status,admission_status AS admissionStatus FROM teams ORDER BY r1_score DESC,r1_time ASC").all();
+    const z=await e.DB.prepare("SELECT id,team_key,team,members,r1_score AS r1Score,r1_time AS r1Time,r2 AS r2Score,penalty,score,CASE WHEN time>r1_time THEN time-r1_time ELSE 0 END AS r2Time,time AS totalTime,r1_answers AS r1Answers,status,admission_status AS admissionStatus FROM teams ORDER BY r1_score DESC,r1_time ASC").all();
     return R(z.results||[]);
    }
    const b=await r.json().catch(()=>({}));

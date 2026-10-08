@@ -614,7 +614,7 @@ function r2View(){
   }).join('');
 
   const q1opts=(r2.q1.answer||[]).map(a=>String(a)).filter((a,i,self)=>self.indexOf(a)===i);
-  const q1SelectOpts=[<option value="">Select your answer / பதிலை தேர்வு செய்யவும்</option>,...q1opts.map(a=>`<option value="${escapeHtml(a)}" ${state.r2_q1[caseIdx]===a?'selected':''}>${escapeHtml(a)}</option>`)].join('');
+  const q1SelectOpts=[`<option value="">Select your answer / பதிலை தேர்வு செய்யவும்</option>`,...q1opts.map(a=>`<option value="${escapeHtml(a)}" ${state.r2_q1[caseIdx]===a?'selected':''}>${escapeHtml(a)}</option>`)].join('');
   const q2opts=r2.q2.opts.map((o,i)=>`<div class="opt ${state.r2_q2[caseIdx]===i?'sel':''}" onclick="pickR2('q2',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
   const q3opts=r2.q3.opts.map((o,i)=>`<div class="opt ${state.r2_q3[caseIdx]===i?'sel':''}" onclick="pickR2('q3',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
   const q4opts=r2.q4.sequences.map((s,i)=>`<div class="opt ${state.r2_q4[caseIdx]===i?'sel':''}" onclick="pickR2('q4',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(s.label_en)}</div><span class="ta tamil">${escapeHtml(s.label_ta)}</span></div></div>`).join('');

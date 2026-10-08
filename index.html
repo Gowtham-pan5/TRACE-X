@@ -614,7 +614,7 @@ function r2View(){
   }).join('');
 
   const q1opts=r2.q1.opts||[];
-  const q1SelectOpts=[`<option value="">Select your answer / பதிலை தேர்வு செய்யவும்</option>`,...q1opts.map(o=>`<option value="${escapeHtml(o.value)}" ${state.r2_q1[caseIdx]===o.value?'selected':''}>${escapeHtml(o.en)} / ${escapeHtml(o.ta)}</option>`)].join('');
+  const q1SelectOpts=[`<option value="" selected hidden></option>`,...q1opts.map((o,i)=>`<option value="${escapeHtml(o.value)}" ${state.r2_q1[caseIdx]===o.value?'selected':''}>${String.fromCharCode(65+i)}) ${escapeHtml(o.en)} / ${escapeHtml(o.ta)}</option>`)].join('');
   const q2opts=r2.q2.opts.map((o,i)=>`<div class="opt ${state.r2_q2[caseIdx]===i?'sel':''}" onclick="pickR2('q2',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
   const q3opts=r2.q3.opts.map((o,i)=>`<div class="opt ${state.r2_q3[caseIdx]===i?'sel':''}" onclick="pickR2('q3',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(o.en)}</div><span class="ta tamil">${escapeHtml(o.ta)}</span></div></div>`).join('');
   const q4opts=r2.q4.sequences.map((s,i)=>`<div class="opt ${state.r2_q4[caseIdx]===i?'sel':''}" onclick="pickR2('q4',${i})" tabindex="0"><div class="key">${String.fromCharCode(65+i)}</div><div class="text"><div>${escapeHtml(s.label_en)}</div><span class="ta tamil">${escapeHtml(s.label_ta)}</span></div></div>`).join('');
@@ -643,7 +643,7 @@ function r2View(){
     <div style="margin-top:12px">
       <div class="q-title">${escapeHtml(r2.q1.en)}<span class="ta tamil">${escapeHtml(r2.q1.ta)}</span></div>
       <select id="r2q1" class="input" style="margin-top:10px" onchange="onQ1(${caseIdx},this.value)">${q1SelectOpts}</select>
-      <div style="margin-top:7px;font-size:12px;color:var(--muted)">Choose one answer from the list / பட்டியலில் ஒரு பதிலை தேர்வு செய்யவும்</div>
+
     </div>
     <div style="height:1px;background:var(--border);margin:18px 0"></div>
     <div><div class="q-title">${escapeHtml(r2.q2.en)}<span class="ta tamil">${escapeHtml(r2.q2.ta)}</span></div><div style="margin-top:10px">${q2opts}</div></div>
